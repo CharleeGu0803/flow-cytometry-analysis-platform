@@ -339,10 +339,15 @@ def delete_batch():
 @bp.route('/api/uploads')
 @login_required
 def get_uploads():
-    files = File.query.filter_by(user_id=g.user.id).all()
+    files = (File.query.filter_by(user_id=g.user.id)
+             .order_by(File.uploaded_at.desc(), File.id.desc()).limit(10).all())
     return jsonify({'success': True, 'uploads': [
-        {'filename': f.file_name,
-         'upload_date': f.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') if f.uploaded_at else ''}
+        {'file_id': f.id,
+         'filename': f.file_name,
+         'batch_id': f.batch_id,
+         'batch_name': f.batch.batch_name,
+         'dataset_name': f.batch.dataset.dataset_name,
+         'upload_date': utc_iso(f.uploaded_at)}
         for f in files]})
 
 

@@ -1,417 +1,457 @@
 {% extends "base.htm" %}
 
-{% block page_title %}
-Update Files
-{% endblock %}
+{% block page_title %}Upload Files{% endblock %}
+
+{% block breadcrumb %}<span class="current">Upload Files</span>{% endblock %}
 
 {% block page_body %}
-<!-- 显示欢迎信息 -->
-<div id="welcome-msg" style="margin-bottom: 20px;"></div>
-
-<div class="update-container">
-  <div class="update-card">
-    <div class="card-header">
-      <i class="fas fa-upload"></i>
-      <h2>Upload New Data</h2>
+<div class="page-header">
+    <div>
+        <h1>Upload Files</h1>
+        <p>Choose where the files go, then add one or more FCS files.</p>
     </div>
-
-    <div class="upload-area">
-      <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
-        <div class="file-input-wrapper">
-  <input type="file" name="file" id="file" required class="file-input" accept=".fcs">
-  <label for="file" class="file-label">
-  <i class="fas fa-cloud-upload-alt"></i>
-  <span id="file-label-text">Choose FCS file</span>
-  <small>Supported format: .fcs</small>
-  <div id="selected-filename" style="margin-top: 8px; font-size: 13px; color: #333;"></div>
-</label>
-  <div id="selected-file-name" style="margin-top: 10px; font-size: 14px; color: #555;"></div>
 </div>
 
+<div class="upload-layout">
+    <div class="card">
+        <form id="uploadForm" novalidate>
+            <div class="step">
+                <span class="step-number">1</span>
+                <div class="step-body form-group">
+                    <label for="dataset">Dataset</label>
+                    <select id="dataset" class="form-control" disabled>
+                        <option value="">Loading datasets…</option>
+                    </select>
+                    <div class="form-hint" id="dataset-hint" hidden>
+                        You don't have any datasets yet. <a href="/edit">Create one on the Datasets page</a>.
+                    </div>
+                </div>
+            </div>
 
-        <div class="form-group">
-          <label for="dataset">Select Dataset</label>
-          <select id="dataset" name="dataset" class="form-control" required onchange="loadBatches(this.value)">
-            <option value="">Select a Dataset...</option>
-            <!-- 数据集选项由 AJAX 加载 -->
-          </select>
-        </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <div class="step-body form-group">
+                    <label for="batch">Batch</label>
+                    <select id="batch" class="form-control" disabled>
+                        <option value="">Choose a dataset first</option>
+                    </select>
+                    <div class="form-hint" id="batch-hint" hidden>
+                        This dataset has no batches. <a href="/edit">Add a batch on the Datasets page</a>.
+                    </div>
+                </div>
+            </div>
 
-        <div class="form-group">
-          <label for="batch">Select Batch</label>
-          <select id="batch" name="batch" class="form-control" required>
-            <option value="">Select a Batch...</option>
-          </select>
-        </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <div class="step-body form-group">
+                    <span class="form-label">FCS files</span>
+                    <input type="file" id="file" accept=".fcs" multiple hidden>
+                    <label for="file" class="drop-zone" id="drop-zone">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        <span><b>Click to choose files</b> or drag and drop them here</span>
+                        <small>.fcs files, up to 200 MB each</small>
+                    </label>
+                    <ul class="selected-files" id="selected-files"></ul>
+                </div>
+            </div>
 
-        <button type="submit" class="submit-button">
-          <i class="fas fa-upload"></i> Upload File
-        </button>
-      </form>
+            <div class="alert alert-error" id="upload-error" role="alert" hidden>
+                <i class="fas fa-circle-exclamation"></i>
+                <span></span>
+            </div>
+
+            <div class="progress" id="upload-progress" hidden>
+                <div class="progress-label">
+                    <span id="progress-text">Uploading…</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="upload-btn" disabled>
+                <i class="fas fa-upload"></i> <span>Upload</span>
+            </button>
+        </form>
     </div>
-  </div>
 
-  <div class="recent-files">
-    <div class="card-header">
-      <i class="fas fa-history"></i>
-      <h2>Recent Uploads</h2>
+    <div class="card">
+        <h2>Recent uploads</h2>
+        <div class="files-list" id="recent-uploads">
+            <div class="empty-state"><p>Loading…</p></div>
+        </div>
     </div>
-    <div class="files-list">
-      {% for upload in uploads %}
-      <div class="file-item">
-        <div class="file-icon">
-          <i class="fas fa-file-medical"></i>
-        </div>
-        <div class="file-info">
-          <h3>{{ upload['filename'] }}</h3>
-          <p>Uploaded: {{ upload.get('upload_date', 'N/A') }}</p>
-        </div>
-        <div class="file-actions">
-          <a href="{{ url_for('uploaded_file', filename=upload['filename']) }}" class="action-button">
-            <i class="fas fa-download"></i>
-          </a>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
 </div>
 
 <style>
-    .update-container {
+.upload-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 20px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
 }
 
-.update-card, .recent-files {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.card-header {
+.step {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--background-color);
+    gap: 14px;
 }
 
-.card-header i {
-    font-size: 24px;
-    color: var(--accent-color);
-}
-
-.card-header h2 {
-    margin: 0;
-    color: var(--primary-color);
-}
-
-.upload-area {
-    padding: 20px;
-    background: var(--background-color);
-    border-radius: 8px;
-}
-
-.file-input-wrapper {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.file-input {
-    display: none;
-}
-
-.file-label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 30px;
-    background: white;
-    border: 2px dashed var(--secondary-color);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.file-label:hover {
-    background: var(--secondary-color);
-    color: white;
-}
-
-.file-label i {
-    font-size: 32px;
-    margin-bottom: 10px;
-    color: var(--secondary-color);
-}
-
-.file-label:hover i {
-    color: white;
-}
-
-.file-label small {
-    margin-top: 5px;
-    color: #666;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-color);
-    font-weight: 500;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+.step-number {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary-hover);
     font-size: 14px;
-    transition: border-color 0.3s ease;
-}
-
-.form-control:focus {
-    border-color: var(--secondary-color);
-    outline: none;
-}
-
-.submit-button {
-    width: 100%;
-    padding: 12px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
 }
 
-.submit-button:hover {
-    background: var(--primary-color);
-    transform: translateY(-2px);
+.step-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.form-group > .drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 28px 16px;
+    text-align: center;
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.drop-zone i {
+    font-size: 30px;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+.drop-zone small {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.selected-files {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+}
+
+.selected-files li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.selected-files li .name {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.selected-files li small {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.progress {
+    margin-bottom: 16px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.progress-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--primary);
+    transition: width 0.15s ease;
 }
 
 .files-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
 }
 
 .file-item {
     display: flex;
     align-items: center;
-    padding: 15px;
-    background: var(--background-color);
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
 }
 
-.file-item:hover {
-    transform: translateX(5px);
-    background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.file-item:last-child {
+    border-bottom: none;
 }
 
-.file-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--secondary-color);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-}
-
-.file-icon i {
-    color: white;
+.file-item > i {
+    color: var(--primary);
     font-size: 18px;
 }
 
 .file-info {
     flex: 1;
+    min-width: 0;
 }
 
-.file-info h3 {
-    margin: 0;
+.file-info .name {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.file-info .meta {
     font-size: 14px;
-    color: var(--text-color);
+    color: var(--text-muted);
 }
 
-.file-info p {
-    margin: 5px 0 0;
-    font-size: 12px;
-    color: #666;
-}
-
-.file-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.action-button {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--background-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--secondary-color);
-    transition: all 0.3s ease;
-}
-
-#selected-filename {
-  font-style: italic;
-  color: #444;
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-
-
-.action-button:hover {
-    background: var(--secondary-color);
-    color: white;
-}
-
-/* 响应式设置 */
-@media (max-width: 768px) {
-    .update-container {
-        grid-template-columns: 1fr;
+@media (max-width: 900px) {
+    .upload-layout {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 </style>
 
-
 <script>
-// 当用户选择数据集时，加载该数据库下所有的批次
-function loadBatches(datasetId) {
-  if (!datasetId) {
-    document.getElementById('batch').innerHTML = '<option value="">Select a Batch...</option>';
-    return;
-  }
-  fetch('/api/batches?dataset_id=' + datasetId)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        let options = '<option value="">Select a Batch...</option>';
-        data.batches.forEach(batch => {
-          options += `<option value="${batch.batch_id}">${batch.batch_name}</option>`;
-        });
-        document.getElementById('batch').innerHTML = options;
-      } else {
-        alert("Error loading batches: " + data.message);
-      }
-    })
-    .catch(err => {
-      console.error("Error fetching batches:", err);
+const datasetSelect = document.getElementById('dataset');
+const batchSelect = document.getElementById('batch');
+const fileInput = document.getElementById('file');
+const dropZone = document.getElementById('drop-zone');
+const uploadBtn = document.getElementById('upload-btn');
+const preset = new URLSearchParams(window.location.search);
+let selectedFiles = [];
+let uploading = false;
+
+function formatSize(bytes) {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function updateUploadButton() {
+    uploadBtn.disabled = uploading || !datasetSelect.value || !batchSelect.value || selectedFiles.length === 0;
+    uploadBtn.querySelector('span').textContent =
+        selectedFiles.length > 1 ? 'Upload ' + plural(selectedFiles.length, 'file') : 'Upload';
+}
+
+function showError(message) {
+    const error = document.getElementById('upload-error');
+    error.querySelector('span').textContent = message;
+    error.hidden = !message;
+}
+
+async function loadDatasets() {
+    try {
+        const data = await api('/api/datasets?timestamp=' + Date.now());
+        if (data.datasets.length === 0) {
+            datasetSelect.innerHTML = '<option value="">No datasets</option>';
+            document.getElementById('dataset-hint').hidden = false;
+            return;
+        }
+        datasetSelect.innerHTML = '<option value="">Choose a dataset…</option>' + data.datasets.map(d =>
+            `<option value="${d.dataset_id}">${escapeHtml(d.dataset_name)}</option>`).join('');
+        datasetSelect.disabled = false;
+        if (preset.get('dataset')) {
+            datasetSelect.value = preset.get('dataset');
+            await loadBatches(datasetSelect.value);
+            if (preset.get('batch')) batchSelect.value = preset.get('batch');
+        }
+    } catch (err) {
+        showError('Could not load datasets: ' + err.message);
+    }
+    updateUploadButton();
+}
+
+async function loadBatches(datasetId) {
+    document.getElementById('batch-hint').hidden = true;
+    batchSelect.disabled = true;
+    if (!datasetId) {
+        batchSelect.innerHTML = '<option value="">Choose a dataset first</option>';
+        updateUploadButton();
+        return;
+    }
+    batchSelect.innerHTML = '<option value="">Loading batches…</option>';
+    try {
+        const data = await api('/api/batches?dataset_id=' + encodeURIComponent(datasetId));
+        if (data.batches.length === 0) {
+            batchSelect.innerHTML = '<option value="">No batches</option>';
+            document.getElementById('batch-hint').hidden = false;
+        } else {
+            batchSelect.innerHTML = '<option value="">Choose a batch…</option>' + data.batches.map(b =>
+                `<option value="${b.batch_id}">${escapeHtml(b.batch_name)}</option>`).join('');
+            batchSelect.disabled = false;
+        }
+    } catch (err) {
+        showError('Could not load batches: ' + err.message);
+    }
+    updateUploadButton();
+}
+
+function setFiles(files) {
+    const rejected = [];
+    selectedFiles = [];
+    Array.from(files).forEach(f => {
+        if (f.name.toLowerCase().endsWith('.fcs')) selectedFiles.push(f); else rejected.push(f.name);
+    });
+    showError(rejected.length ? 'Only .fcs files are supported. Skipped: ' + rejected.join(', ') : '');
+    renderSelectedFiles();
+}
+
+function renderSelectedFiles() {
+    const list = document.getElementById('selected-files');
+    list.innerHTML = selectedFiles.map((f, i) => `
+        <li>
+            <i class="fas fa-file-medical muted"></i>
+            <span class="name">${escapeHtml(f.name)}</span>
+            <small>${formatSize(f.size)}</small>
+            <button type="button" class="icon-btn" data-index="${i}" aria-label="Remove ${escapeHtml(f.name)}">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </li>`).join('');
+    list.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+        selectedFiles.splice(Number(btn.dataset.index), 1);
+        renderSelectedFiles();
+    }));
+    updateUploadButton();
+}
+
+// Upload with XMLHttpRequest so we can report progress
+function uploadOne(file, onProgress) {
+    return new Promise((resolve, reject) => {
+        const body = new FormData();
+        body.append('dataset', datasetSelect.value);
+        body.append('batch', batchSelect.value);
+        body.append('file', file);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.upload.onprogress = e => e.lengthComputable && onProgress(e.loaded / e.total);
+        xhr.onload = () => {
+            let data = {};
+            try { data = JSON.parse(xhr.responseText); } catch (e) { /* handled below */ }
+            if (xhr.status === 413) reject(new Error(file.name + ' is larger than 200 MB'));
+            else if (xhr.status >= 400 || !data.success) reject(new Error(file.name + ': ' + (data.message || 'upload failed')));
+            else resolve(data);
+        };
+        xhr.onerror = () => reject(new Error(file.name + ': network error'));
+        xhr.send(body);
     });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById('file').addEventListener('change', function () {
-  const labelText = document.getElementById('file-label-text');
-  const fileDisplay = document.getElementById('selected-filename');
-  if (this.files.length > 0) {
-    labelText.textContent = "File Selected";
-    fileDisplay.textContent = this.files[0].name;
-  } else {
-    labelText.textContent = "Choose FCS file";
-    fileDisplay.textContent = "";
-  }
+async function loadUploads() {
+    const list = document.getElementById('recent-uploads');
+    try {
+        const data = await api('/api/uploads?timestamp=' + Date.now());
+        if (data.uploads.length === 0) {
+            list.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i>
+                <p>No uploads yet. Files you upload will appear here.</p></div>`;
+            return;
+        }
+        list.innerHTML = data.uploads.map(u => `
+            <div class="file-item">
+                <i class="fas fa-file-medical"></i>
+                <div class="file-info">
+                    <div class="name">${escapeHtml(u.filename)}</div>
+                    <div class="meta">
+                        ${escapeHtml(u.dataset_name)} /
+                        <a href="/batch?batch_id=${u.batch_id}">${escapeHtml(u.batch_name)}</a>
+                        · <time data-local datetime="${escapeHtml(u.upload_date)}"></time>
+                    </div>
+                </div>
+                <a href="/sample?file_id=${u.file_id}" class="btn btn-secondary btn-sm">Analyze</a>
+            </div>`).join('');
+        localizeTimes(list);
+    } catch (err) {
+        list.innerHTML = `<div class="empty-state"><p>Could not load recent uploads.</p></div>`;
+    }
+}
+
+datasetSelect.addEventListener('change', () => loadBatches(datasetSelect.value));
+batchSelect.addEventListener('change', updateUploadButton);
+fileInput.addEventListener('change', () => setFiles(fileInput.files));
+
+['dragenter', 'dragover'].forEach(type => dropZone.addEventListener(type, e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+}));
+['dragleave', 'drop'].forEach(type => dropZone.addEventListener(type, e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+}));
+dropZone.addEventListener('drop', e => setFiles(e.dataTransfer.files));
+
+document.getElementById('uploadForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (uploadBtn.disabled) return;
+    const progress = document.getElementById('upload-progress');
+    const files = selectedFiles.slice();
+    uploading = true;
+    updateUploadButton();
+    showError('');
+    progress.hidden = false;
+
+    let done = 0;
+    const failures = [];
+    const failedFiles = [];
+    for (const [i, file] of files.entries()) {
+        document.getElementById('progress-text').textContent =
+            files.length > 1 ? `Uploading ${file.name} (${i + 1} of ${files.length})` : `Uploading ${file.name}`;
+        try {
+            await uploadOne(file, fraction => {
+                const pct = Math.round(((i + fraction) / files.length) * 100);
+                document.getElementById('progress-bar').style.width = pct + '%';
+                document.getElementById('progress-percent').textContent = pct + '%';
+            });
+            done++;
+        } catch (err) {
+            failures.push(err.message);
+            failedFiles.push(file);
+        }
+    }
+
+    uploading = false;
+    progress.hidden = true;
+    document.getElementById('progress-bar').style.width = '0';
+    // Keep files that failed so they can be retried
+    fileInput.value = '';
+    selectedFiles = failedFiles;
+    renderSelectedFiles();
+    if (failures.length) showError(failures.join(' · '));
+    if (done) showToast('Uploaded ' + plural(done, 'file'));
+    loadUploads();
 });
 
-
-
-  // Confirm the session is still valid and get the user info
-  fetch('/api/check_auth', {
-    method: 'GET',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (!data.success) {
-      window.location.href = '/login';
-    } else {
-      document.getElementById('welcome-msg').innerText = "Welcome, " + data.user.username;
-      loadDatasets();
-    }
-  })
-  .catch(err => {
-    console.error("Auth error:", err);
-    window.location.href = '/login';
-  });
-
-  // 加载当前用户下所有数据库（datasets）
-  function loadDatasets() {
-    fetch('/api/datasets?timestamp=' + new Date().getTime(), {
-      method: 'GET',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        let options = '<option value="">Select a Dataset...</option>';
-        data.datasets.forEach(dataset => {
-          options += `<option value="${dataset.dataset_id}">${dataset.dataset_name}</option>`;
-        });
-        document.getElementById('dataset').innerHTML = options;
-      } else {
-        alert("Failed to load datasets: " + data.message);
-      }
-    })
-    .catch(err => {
-      console.error("Error fetching datasets:", err);
-    });
-  }
-
-  // 提交上传表单
-  document.getElementById('uploadForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  fetch('/upload', {
-    method: 'POST',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert(data.message);
-      // ✅ 添加以下内容来清除上传状态
-      // 清除文件输入和显示文字
-       document.getElementById('file').value = "";  // 清空 input
-       document.getElementById('file-label-text').textContent = "Choose FCS file";
-       document.getElementById('selected-filename').textContent = "";
-
-    } else {
-      alert("Upload failed: " + data.message);
-    }
-  })
-  .catch(err => {
-    console.error("Upload error:", err);
-  });
-});
-});
+loadDatasets();
+loadUploads();
 </script>
 {% endblock %}

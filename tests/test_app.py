@@ -89,6 +89,19 @@ def test_upload_rejects_non_fcs(client):
     assert res.status_code == 400
 
 
+def test_recent_uploads_newest_first(client):
+    register_and_login(client)
+    ds = client.post('/api/dataset/new', data={'dataset_name': 'DS'}).get_json()['dataset']
+    batch = client.post('/api/batch/new', data={'dataset_id': ds['dataset_id'], 'batch_name': 'B1'}).get_json()['batch']
+    for name in ('first.fcs', 'second.fcs'):
+        client.post('/upload', data={'dataset': ds['dataset_id'], 'batch': batch['batch_id'],
+                                     'file': (io.BytesIO(b'x'), name)},
+                    content_type='multipart/form-data')
+    uploads = client.get('/api/uploads').get_json()['uploads']
+    assert [u['filename'] for u in uploads] == ['second.fcs', 'first.fcs']
+    assert uploads[0]['batch_name'] == 'B1' and uploads[0]['dataset_name'] == 'DS'
+
+
 def test_admin_routes(app, client):
     register_and_login(client, 'alice')
     assert client.get('/api/admin/users').status_code == 403
