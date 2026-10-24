@@ -36,6 +36,15 @@ def test_register_and_login(client):
     assert register_and_login(client)['success']
 
 
+def test_home_shows_overview(client):
+    register_and_login(client)
+    ds = client.post('/api/dataset/new', data={'dataset_name': 'DS'}).get_json()['dataset']
+    client.post('/api/batch/new', data={'dataset_id': ds['dataset_id'], 'batch_name': 'B1'})
+    html = client.get('/').get_data(as_text=True)
+    assert 'Welcome, alice' in html
+    assert 'Recent batches' in html and 'B1' in html
+
+
 def test_register_rejects_unsafe_username(client):
     res = client.post('/register', data={'username': '<script>', 'password': 'secret123'}).get_json()
     assert res['success'] is False

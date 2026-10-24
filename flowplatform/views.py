@@ -132,8 +132,15 @@ def check_auth():
 
 @bp.route('/')
 @login_required
-def user_datasets():
-    return render_template('datasets.htm', dataset_list=_dataset_summary(g.user.id))
+def home():
+    datasets = _dataset_summary(g.user.id)
+    batches = [dict(b, dataset_name=d['dataset_name']) for d in datasets for b in d['batches']]
+    recent_batches = sorted(batches, key=lambda b: b['batch_id'], reverse=True)[:6]
+    return render_template('home.htm',
+                           num_datasets=len(datasets),
+                           num_batches=len(batches),
+                           num_samples=sum(b['samples'] for b in batches),
+                           recent_batches=recent_batches)
 
 
 @bp.route('/edit')
