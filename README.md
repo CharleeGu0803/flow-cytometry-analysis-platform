@@ -11,10 +11,10 @@ This project started as a team project in the ANU TechLauncher program (started 
 - User accounts with registration, login and an admin role
 - Datasets → batches → FCS files hierarchy, scoped per user
 - Upload FCS files into a batch
-- Density scatter plots for any pair of channels, on linear or logicle scales
-- Cell counts inside a rectangular region or one of the panel's predefined gates
+- Density scatter plots for any pair of channels, on linear, logicle or arcsinh scales, with box zoom
+- Cell counts (and % of total) inside a rectangle or polygon drawn on the plot, or one of the panel's predefined gates
 - Per-batch PDF report of the cell count for every gate in every file
-- Admin page to list users and delete accounts
+- Admin page to list users, reset passwords and delete accounts
 
 ## Tech stack
 
@@ -32,7 +32,7 @@ flask create-admin admin      # prompts for a password
 flask run
 ```
 
-Open http://127.0.0.1:5000, register an account (or log in as the admin), create a dataset and a batch, and upload an `.fcs` file from **Update Files**.
+Open http://127.0.0.1:5000, register an account (or log in as the admin), create a dataset and a batch, and upload `.fcs` files from **Upload Files**.
 
 The SQLite database, uploaded files and generated plots are stored under `data/`, which is git-ignored. Set `FLOW_DATA_DIR` to store them somewhere else.
 
