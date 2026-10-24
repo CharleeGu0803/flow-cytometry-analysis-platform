@@ -1,130 +1,663 @@
 {% extends "base.htm" %}
 
-{% block page_title %}
-Batch: {% endblock %}
+{% block page_title %}{{ sample_filename }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="/edit">Datasets</a>
+<i class="fas fa-chevron-right sep"></i>
+<span>{{ batch.dataset.dataset_name }}</span>
+<i class="fas fa-chevron-right sep"></i>
+<a href="/batch?batch_id={{ batch.id }}">{{ batch.batch_name }}</a>
+<i class="fas fa-chevron-right sep"></i>
+<span class="current">{{ sample_filename }}</span>
+{% endblock %}
+
+{% macro axis_fields(axis, default) %}
+<fieldset class="axis-fields">
+    <legend>{{ axis }} axis</legend>
+    <div class="form-group">
+        <label for="ch_{{ axis }}">Channel</label>
+        <select id="ch_{{ axis }}" class="form-control">
+            {% for ch_name in ch_list %}
+            <option value="{{ ch_name }}" {% if ch_name == default %}selected{% endif %}>{{ ch_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="ch_{{ axis }}_scale">Scale</label>
+        <select id="ch_{{ axis }}_scale" class="form-control">
+            <option value="linear">Linear</option>
+            <option value="logicle">Logicle (biexponential)</option>
+            <option value="arcsinh">Arcsinh (cofactor 150)</option>
+        </select>
+    </div>
+    <div class="range-row">
+        <div class="form-group">
+            <label for="{{ axis|lower }}_min">Min</label>
+            <input type="number" step="any" id="{{ axis|lower }}_min" class="form-control" placeholder="auto">
+        </div>
+        <div class="form-group">
+            <label for="{{ axis|lower }}_max">Max</label>
+            <input type="number" step="any" id="{{ axis|lower }}_max" class="form-control" placeholder="auto">
+        </div>
+    </div>
+</fieldset>
+{% endmacro %}
 
 {% block page_body %}
-
-<a href="/batch?batch_id={{ batch_id }}" style="font-size: 14px; text-decoration: none; color: #007bff;">← Back to Samples</a>
-<hr style="border-top: 1px solid #ccc;">
-
-<div class="container"
-     style="display: flex; justify-content: space-between; width: 100%; max-width: 1200px; margin: 0 auto;">
-    <!-- 左侧：图表 -->
-    <div style="flex: 1; margin-right: 20px;">
-        <h2 style="font-size: 24px; margin-bottom: 10px;">{{ step_title }}</h2>
-        <p style="font-size: 16px; color: #555;">{{ sample_filename }}</p>
-        <img id="plot_image" alt="Plot is being generated..."
-             style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
-
-    </div>
-
-    <!-- 右侧：工具框 -->
-    <div style="flex: 0 0 350px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-        <h3 style="margin-bottom: 20px;">Adjust Plot Settings</h3>
-        <form method="GET" action="/sample">
-            <div>
-                <b>X-axis:</b>
-                <select id="ch_X" name="ch_X" onchange="refresh_plot()" style="width: 100%; margin-bottom: 10px;">
-                    {% for ch_name in ch_list %}
-                    <option value="{{ ch_name }}" {% if ch_name == default_x %}selected{% endif %}>{{ ch_name }}</option>
-                    {% endfor %}
-                </select>
-
-                <b>X-axis scale:</b>
-                <select id="ch_X_scale" name="ch_X_scale" onchange="refresh_plot()"
-                        style="width: 100%; margin-bottom: 10px;">
-                    <option value="linear">Linear</option>
-                    <option value="logicle">Logarithmic</option>
-                </select>
-
-                <b>X-axis Min:</b>
-                <input type="number" id="x_min" name="x_min" onchange="refresh_plot()"
-                       style="width: 100%; margin-bottom: 10px;">
-
-                <b>X-axis Max:</b>
-                <input type="number" id="x_max" name="x_max" onchange="refresh_plot()"
-                       style="width: 100%; margin-bottom: 20px;">
-            </div>
-
-            <div>
-                <b>Y-axis:</b>
-                <select id="ch_Y" name="ch_Y" onchange="refresh_plot()" style="width: 100%; margin-bottom: 10px;">
-                    {% for ch_name in ch_list %}
-                    <option value="{{ ch_name }}" {% if ch_name == default_y %}selected{% endif %}>{{ ch_name }}</option>
-                    {% endfor %}
-                </select>
-
-                <b>Y-axis scale:</b>
-                <select id="ch_Y_scale" name="ch_Y_scale" onchange="refresh_plot()"
-                        style="width: 100%; margin-bottom: 10px;">
-                    <option value="linear">Linear</option>
-                    <option value="logicle">Logarithmic</option>
-                </select>
-
-                <b>Y-axis Min:</b>
-                <input type="number" id="y_min" name="y_min" onchange="refresh_plot()"
-                       style="width: 100%; margin-bottom: 10px;">
-
-                <b>Y-axis Max:</b>
-                <input type="number" id="y_max" name="y_max" onchange="refresh_plot()"
-                       style="width: 100%; margin-bottom: 20px;">
-            </div>
-
-            <!-- Gate选择下拉菜单 -->
-            <div style="margin-bottom: 20px;">
-                <b>Select Gate:</b>
-                <select id="gate_select" name="gate_select" onchange="refresh_plot()"
-                        style="width: 100%; margin-bottom: 10px;">
-                    <option value="-1">--Select Gate--</option>
-                    {% for gate in gates %}
-                    <option value="{{ gate.gate_id }}">{{ gate.gate_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div style="margin-top: 20px;">
-                <b>Number of cells in range:</b> <span id="cell_count" style="font-size: 16px; color: #333;">0</span>
-            </div>
-
-        </form>
+<div class="page-header">
+    <div>
+        <h1>{{ sample_filename }}</h1>
+        <p>Sample in batch <b>{{ batch.batch_name }}</b> · dataset <b>{{ batch.dataset.dataset_name }}</b></p>
     </div>
 </div>
 
-<script>
-    const fileId = {{ file_id | tojson }};
-    let pending = null;
+<div class="analysis-layout">
+    <div class="card plot-card">
+        <div class="plot-toolbar">
+            <div class="segmented" role="group" aria-label="Plot tool">
+                <button type="button" class="active" data-tool="zoom" title="Drag to zoom into a region">
+                    <i class="fas fa-magnifying-glass-plus"></i> Zoom
+                </button>
+                <button type="button" data-tool="rect" title="Drag to draw a rectangular gate">
+                    <i class="far fa-square"></i> Rectangle gate
+                </button>
+                <button type="button" data-tool="polygon" title="Click to add points; double-click to close">
+                    <i class="fas fa-draw-polygon"></i> Polygon gate
+                </button>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="clear-gate-btn" disabled>
+                    <i class="fas fa-eraser"></i> Clear gate
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="reset-zoom-btn" disabled>
+                    <i class="fas fa-expand"></i> Reset zoom
+                </button>
+            </div>
+        </div>
+        <p class="tool-hint" id="tool-hint"></p>
 
-    function refresh_plot() {
-        const params = new URLSearchParams({file_id: fileId});
-        for (const id of ['ch_X', 'ch_Y', 'ch_X_scale', 'ch_Y_scale', 'x_min', 'x_max', 'y_min', 'y_max']) {
-            params.set(id, document.getElementById(id).value);
-        }
-        params.set('gate_id', document.getElementById('gate_select').value);
+        <div class="gate-stats" id="gate-stats" aria-live="polite"></div>
 
-        if (pending) pending.abort();
-        pending = new AbortController();
-        document.getElementById('cell_count').innerText = '...';
+        <div class="plot-stage" id="plot-stage">
+            <img id="plot-image" alt="Density plot of the selected channels" hidden>
+            <canvas id="overlay"></canvas>
+            <div class="plot-loading" id="plot-loading"><i class="fas fa-spinner fa-spin"></i> Rendering plot…</div>
+        </div>
+    </div>
 
-        fetch('/sample?' + params.toString(), {method: 'PUT', signal: pending.signal})
-            .then(res => res.json().then(data => ({ok: res.ok, data})))
-            .then(({ok, data}) => {
-                if (!ok) throw new Error(data.message || 'Request failed');
-                document.getElementById('cell_count').innerText = data.cell_count;
-                // Cache-bust so the browser fetches the freshly rendered plot
-                document.getElementById('plot_image').src = '/sample/plot?file_id=' + fileId + '&t=' + Date.now();
-            })
-            .catch(err => {
-                if (err.name !== 'AbortError') {
-                    document.getElementById('cell_count').innerText = 'Error: ' + err.message;
-                }
-            });
+    <form class="card settings-card" id="settings-form" novalidate>
+        <div class="settings-header">
+            <h2>Plot settings</h2>
+            <div class="settings-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="reset-btn">Reset</button>
+                <button type="submit" class="btn btn-primary btn-sm" id="apply-btn" disabled>Apply</button>
+            </div>
+        </div>
+        <p class="form-hint dirty-hint" id="dirty-hint" hidden>
+            <i class="fas fa-circle-info"></i> Changes are not applied yet. Click <b>Apply</b> to update the plot.
+        </p>
+        {{ axis_fields('X', default_x) }}
+        {{ axis_fields('Y', default_y) }}
+
+        <div class="form-group">
+            <label for="gate_select">Predefined gate</label>
+            <select id="gate_select" class="form-control">
+                <option value="-1">None</option>
+                {% for gate in gates %}
+                <option value="{{ gate.gate_id }}">{{ gate.gate_name }} ({{ gate.ch_X }} vs {{ gate.ch_Y }})</option>
+                {% endfor %}
+            </select>
+            <div class="form-hint" id="gate-hint" hidden>The gate sets the channels for both axes.</div>
+        </div>
+    </form>
+</div>
+
+<style>
+.analysis-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+.plot-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.segmented {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.segmented button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-right: 1px solid var(--border-strong);
+    background: var(--surface);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.segmented button:last-child {
+    border-right: none;
+}
+
+.segmented button:hover {
+    background: var(--surface-muted);
+}
+
+.segmented button.active {
+    background: var(--primary-soft);
+    color: var(--primary-hover);
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.tool-hint {
+    margin: 10px 0 12px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.plot-stage {
+    position: relative;
+    width: 100%;
+    /* keep the whole square plot and the counts below it on screen */
+    max-width: min(720px, calc(100vh - 360px));
+    min-width: 320px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: white;
+}
+
+.plot-stage img, .plot-stage canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.plot-stage canvas {
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.plot-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+.gate-stats {
+    margin-bottom: 12px;
+    min-height: 28px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--bg);
+    text-align: center;
+    font-size: 17px;
+}
+
+.gate-stats .alert {
+    margin: 0;
+}
+
+.gate-stats b {
+    font-variant-numeric: tabular-nums;
+}
+
+.gate-stats .muted {
+    font-size: 15px;
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.settings-header h2 {
+    margin: 0;
+}
+
+.axis-fields {
+    border: none;
+    padding: 0;
+    margin: 0 0 8px;
+    min-width: 0;
+}
+
+.axis-fields legend {
+    padding: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.range-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.settings-card .form-group {
+    margin-bottom: 14px;
+}
+
+.settings-card .form-control {
+    font-size: 15px;
+    padding: 7px 10px;
+}
+
+.settings-card select.form-control {
+    padding-right: 32px;
+}
+
+.dirty-hint {
+    margin: -6px 0 14px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: var(--primary-soft);
+    color: var(--primary-hover);
+}
+
+.settings-actions {
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 1100px) {
+    .analysis-layout {
+        grid-template-columns: minmax(0, 1fr);
     }
+}
+</style>
 
-    document.addEventListener('DOMContentLoaded', refresh_plot);
+<script>
+const fileId = {{ file_id | tojson }};
+const scatterChannels = {{ scatter_channels | tojson }};
+const gates = {{ gates | tojson }};
+const defaults = {ch_X: {{ default_x | tojson }}, ch_Y: {{ default_y | tojson }}};
+const SETTING_IDS = ['ch_X', 'ch_Y', 'ch_X_scale', 'ch_Y_scale', 'x_min', 'x_max', 'y_min', 'y_max', 'gate_select'];
+const GATE_COLOR = '#D946EF';
+const TOOL_HINTS = {
+    zoom: 'Drag a box on the plot to zoom in.',
+    rect: 'Drag a box on the plot to gate the events inside it.',
+    polygon: 'Click to add points, then double-click (or click the first point) to close the gate. Press Esc to cancel.',
+};
+
+const $ = id => document.getElementById(id);
+const image = $('plot-image');
+const canvas = $('overlay');
+const ctx = canvas.getContext('2d');
+
+let applied = null;     // settings of the plot currently shown
+let view = null;        // {limits: [x0, x1, y0, y1], axes: [left, bottom, right, top]} of the current image
+let polygon = null;     // user-drawn gate, in data coordinates of the current scales
+let tool = 'zoom';
+let drag = null;        // {start, end} while dragging a box
+let vertices = [];      // polygon being drawn
+let hover = null;
+let pending = null;
+
+function nativeScale(ch) {
+    return scatterChannels.includes(ch) ? 'linear' : 'logicle';
+}
+
+function readForm() {
+    const s = {};
+    SETTING_IDS.forEach(id => s[id] = $(id).value);
+    return s;
+}
+
+function writeForm(s) {
+    SETTING_IDS.forEach(id => $(id).value = s[id]);
+    syncGateState();
+}
+
+function defaultSettings() {
+    return {
+        ch_X: defaults.ch_X, ch_Y: defaults.ch_Y,
+        ch_X_scale: nativeScale(defaults.ch_X), ch_Y_scale: nativeScale(defaults.ch_Y),
+        x_min: '', x_max: '', y_min: '', y_max: '', gate_select: '-1',
+    };
+}
+
+function syncGateState() {
+    const gated = $('gate_select').value !== '-1';
+    $('ch_X').disabled = gated;
+    $('ch_Y').disabled = gated;
+    $('gate-hint').hidden = !gated;
+}
+
+function updateDirty() {
+    const current = readForm();
+    const dirty = !applied || SETTING_IDS.some(id => current[id] !== applied[id]);
+    $('apply-btn').disabled = !dirty;
+    $('dirty-hint').hidden = !dirty || !applied;
+}
+
+// ---------- coordinates ----------
+
+function plotBox() {
+    const [l, b, r, t] = view.axes;
+    return {x: l * canvas.width, y: (1 - t) * canvas.height, w: (r - l) * canvas.width, h: (t - b) * canvas.height};
+}
+
+function toData(px, py) {
+    const box = plotBox();
+    const [x0, x1, y0, y1] = view.limits;
+    const fx = Math.min(Math.max((px - box.x) / box.w, 0), 1);
+    const fy = Math.min(Math.max((py - box.y) / box.h, 0), 1);
+    return [x0 + fx * (x1 - x0), y1 - fy * (y1 - y0)];
+}
+
+function toPixel([x, y]) {
+    const box = plotBox();
+    const [x0, x1, y0, y1] = view.limits;
+    return [box.x + (x - x0) / (x1 - x0) * box.w, box.y + (y1 - y) / (y1 - y0) * box.h];
+}
+
+function eventPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    return [(e.clientX - rect.left) * canvas.width / rect.width, (e.clientY - rect.top) * canvas.height / rect.height];
+}
+
+function insidePlot([px, py]) {
+    const box = plotBox();
+    return px >= box.x && px <= box.x + box.w && py >= box.y && py <= box.y + box.h;
+}
+
+// ---------- overlay drawing ----------
+
+function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * ratio);
+    canvas.height = Math.round(rect.height * ratio);
+    drawOverlay();
+}
+
+function drawOverlay() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!view) return;
+    const ratio = window.devicePixelRatio || 1;
+    ctx.lineWidth = 2 * ratio;
+    ctx.strokeStyle = GATE_COLOR;
+    ctx.fillStyle = 'rgba(217, 70, 239, 0.12)';
+
+    if (drag) {
+        const [ax, ay] = drag.start, [bx, by] = drag.end;
+        ctx.setLineDash(tool === 'zoom' ? [6 * ratio, 4 * ratio] : []);
+        ctx.strokeStyle = tool === 'zoom' ? '#0F172A' : GATE_COLOR;
+        ctx.strokeRect(ax, ay, bx - ax, by - ay);
+        if (tool !== 'zoom') ctx.fillRect(ax, ay, bx - ax, by - ay);
+        ctx.setLineDash([]);
+    }
+    if (vertices.length) {
+        const pts = vertices.map(toPixel);
+        ctx.beginPath();
+        ctx.moveTo(...pts[0]);
+        pts.slice(1).forEach(p => ctx.lineTo(...p));
+        if (hover) ctx.lineTo(...hover);
+        ctx.stroke();
+        pts.forEach(([x, y], i) => {
+            ctx.beginPath();
+            ctx.arc(x, y, (i === 0 ? 5 : 3.5) * ratio, 0, Math.PI * 2);
+            ctx.fillStyle = i === 0 ? 'white' : GATE_COLOR;
+            ctx.fill();
+            ctx.stroke();
+        });
+    }
+}
+
+// ---------- plot requests ----------
+
+function setTool(name) {
+    tool = name;
+    vertices = [];
+    drag = null;
+    document.querySelectorAll('.segmented button').forEach(b => b.classList.toggle('active', b.dataset.tool === name));
+    $('tool-hint').textContent = TOOL_HINTS[name];
+    drawOverlay();
+}
+
+function renderStats(data) {
+    const stats = $('gate-stats');
+    if (!data.gated) {
+        stats.innerHTML = `<b>${data.total.toLocaleString()}</b> events <span class="muted">· draw or choose a gate to count events inside it</span>`;
+        return;
+    }
+    const pct = data.total ? (100 * data.cell_count / data.total).toFixed(1) : '0.0';
+    stats.innerHTML = `Events in gate: <b>${data.cell_count.toLocaleString()}</b> / ${data.total.toLocaleString()}
+        <span class="muted">(${pct}%)</span>`;
+}
+
+function formatLimit(v) {
+    return Number(Number(v).toPrecision(4)).toString();
+}
+
+async function refreshPlot(settings) {
+    if (pending) pending.abort();
+    pending = new AbortController();
+    $('plot-loading').hidden = false;
+
+    const body = {file_id: fileId, gate_id: settings.gate_select, polygon};
+    SETTING_IDS.filter(id => id !== 'gate_select').forEach(id => body[id] = settings[id]);
+
+    try {
+        const res = await fetch('/sample', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            body: JSON.stringify(body),
+            signal: pending.signal,
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Request failed');
+
+        // The server may override channels (predefined gates) - reflect what is actually shown
+        Object.assign(settings, {ch_X: data.ch_X, ch_Y: data.ch_Y, ch_X_scale: data.ch_X_scale, ch_Y_scale: data.ch_Y_scale});
+        writeForm(settings);
+        applied = {...settings};
+        view = {limits: data.limits, axes: data.axes};
+        ['x_min', 'x_max', 'y_min', 'y_max'].forEach((id, i) => $(id).placeholder = formatLimit(data.limits[i]));
+
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('Could not load the plot image'));
+            image.src = '/sample/plot?file_id=' + fileId + '&t=' + Date.now();
+        });
+        image.hidden = false;
+        renderStats(data);
+        $('clear-gate-btn').disabled = !data.gated;
+        $('reset-zoom-btn').disabled = !['x_min', 'x_max', 'y_min', 'y_max'].some(id => settings[id] !== '');
+        vertices = [];
+        resizeCanvas();
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        $('gate-stats').innerHTML = `<div class="alert alert-error" role="alert"><i class="fas fa-circle-exclamation"></i>
+            <span>${escapeHtml(err.message)}</span></div>`;
+    } finally {
+        $('plot-loading').hidden = true;
+        updateDirty();
+    }
+}
+
+function apply() {
+    const settings = readForm();
+    // A drawn gate only makes sense on the channels and scales it was drawn on
+    if (applied && ['ch_X', 'ch_Y', 'ch_X_scale', 'ch_Y_scale'].some(id => settings[id] !== applied[id])) polygon = null;
+    if (settings.gate_select !== '-1') polygon = null;
+    refreshPlot(settings);
+}
+
+function applyWith(changes) {
+    writeForm({...readForm(), ...changes});
+    apply();
+}
+
+// ---------- events ----------
+
+['X', 'Y'].forEach(axis => {
+    // Switching channel picks that channel's conventional scale and resets its range
+    $('ch_' + axis).addEventListener('change', () => {
+        $('ch_' + axis + '_scale').value = nativeScale($('ch_' + axis).value);
+        $(axis.toLowerCase() + '_min').value = '';
+        $(axis.toLowerCase() + '_max').value = '';
+        updateDirty();
+    });
+    $('ch_' + axis + '_scale').addEventListener('change', () => {
+        $(axis.toLowerCase() + '_min').value = '';
+        $(axis.toLowerCase() + '_max').value = '';
+        updateDirty();
+    });
+});
+
+$('gate_select').addEventListener('change', () => {
+    const gate = gates.find(g => String(g.gate_id) === $('gate_select').value);
+    if (gate) {
+        writeForm({...readForm(), gate_select: String(gate.gate_id), ch_X: gate.ch_X, ch_Y: gate.ch_Y,
+            ch_X_scale: nativeScale(gate.ch_X), ch_Y_scale: nativeScale(gate.ch_Y),
+            x_min: '', x_max: '', y_min: '', y_max: ''});
+    }
+    syncGateState();
+    updateDirty();
+});
+
+['x_min', 'x_max', 'y_min', 'y_max'].forEach(id => $(id).addEventListener('input', updateDirty));
+
+$('settings-form').addEventListener('submit', e => {
+    e.preventDefault();
+    apply();
+});
+
+$('reset-btn').addEventListener('click', () => {
+    polygon = null;
+    writeForm(defaultSettings());
+    apply();
+});
+
+$('clear-gate-btn').addEventListener('click', () => {
+    polygon = null;
+    applyWith({gate_select: '-1'});
+});
+
+$('reset-zoom-btn').addEventListener('click', () => applyWith({x_min: '', x_max: '', y_min: '', y_max: ''}));
+
+document.querySelectorAll('.segmented button').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+
+canvas.addEventListener('pointerdown', e => {
+    if (!view || tool === 'polygon') return;
+    const p = eventPoint(e);
+    if (!insidePlot(p)) return;
+    canvas.setPointerCapture(e.pointerId);
+    drag = {start: p, end: p};
+});
+
+canvas.addEventListener('pointermove', e => {
+    if (!view) return;
+    const p = eventPoint(e);
+    if (drag) {
+        const box = plotBox();
+        drag.end = [Math.min(Math.max(p[0], box.x), box.x + box.w), Math.min(Math.max(p[1], box.y), box.y + box.h)];
+        drawOverlay();
+    } else if (tool === 'polygon' && vertices.length) {
+        hover = p;
+        drawOverlay();
+    }
+});
+
+canvas.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const [ax, ay] = toData(...drag.start);
+    const [bx, by] = toData(...drag.end);
+    const tooSmall = Math.abs(drag.end[0] - drag.start[0]) < 6 || Math.abs(drag.end[1] - drag.start[1]) < 6;
+    drag = null;
+    drawOverlay();
+    if (tooSmall) return;
+    const [x0, x1, y0, y1] = [Math.min(ax, bx), Math.max(ax, bx), Math.min(ay, by), Math.max(ay, by)];
+    if (tool === 'zoom') {
+        applyWith({x_min: formatLimit(x0), x_max: formatLimit(x1), y_min: formatLimit(y0), y_max: formatLimit(y1)});
+    } else {
+        polygon = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+        applyWith({gate_select: '-1'});
+    }
+});
+
+function closePolygon() {
+    if (vertices.length < 3) return;
+    polygon = vertices.slice();
+    vertices = [];
+    hover = null;
+    applyWith({gate_select: '-1'});
+}
+
+canvas.addEventListener('click', e => {
+    if (!view || tool !== 'polygon') return;
+    const p = eventPoint(e);
+    if (!insidePlot(p)) return;
+    if (vertices.length >= 3) {
+        const [fx, fy] = toPixel(vertices[0]);
+        if (Math.hypot(p[0] - fx, p[1] - fy) < 10 * (window.devicePixelRatio || 1)) {
+            closePolygon();
+            return;
+        }
+    }
+    vertices.push(toData(...p));
+    drawOverlay();
+});
+
+canvas.addEventListener('dblclick', e => {
+    if (tool !== 'polygon') return;
+    e.preventDefault();
+    // The double-click's second click already added a duplicate point
+    vertices.pop();
+    closePolygon();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && (vertices.length || drag)) {
+        vertices = [];
+        drag = null;
+        hover = null;
+        drawOverlay();
+    }
+});
+
+new ResizeObserver(resizeCanvas).observe(canvas);
+
+setTool('zoom');
+writeForm(defaultSettings());
+apply();
 </script>
-
-{% endblock %}
-
-{% block page_footer %}
 {% endblock %}

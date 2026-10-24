@@ -133,6 +133,15 @@ def test_fluorescence_gate_scales_agree():
                         'logicle', 'linear')[:, 0] == pytest.approx([0.5, 0.6], abs=1e-4)
 
 
+def test_arcsinh_gate_matches_arcsinh_of_linear():
+    from flowplatform.analysis import ARCSINH_COFACTOR, gate_polygon
+    gate = {'ch_X': 'CD8 BUV 395', 'ch_Y': 'FSC-A',
+            'coords': [{'x': 131072, 'y': 1500}, {'x': 157286, 'y': 3000}]}
+    linear = gate_polygon(gate, 'linear', 'linear')
+    asinh = gate_polygon(gate, 'arcsinh', 'arcsinh')
+    assert asinh == pytest.approx(np.arcsinh(linear / ARCSINH_COFACTOR))
+
+
 def test_admin_user_details_and_password_reset(app, client):
     register_and_login(client, 'alice')
     client.post('/register', data={'username': 'bob', 'password': 'secret123'})
@@ -147,3 +156,14 @@ def test_admin_user_details_and_password_reset(app, client):
     assert client.post('/api/admin/reset_password', data={'user_id': bob, 'password': 'abc'}).status_code == 400
     assert client.post('/api/admin/reset_password', data={'user_id': bob, 'password': 'newpass1'}).get_json()['success']
     assert register_and_login(app.test_client(), 'bob', 'newpass1')['success']
+
+
+def test_sample_update_rejects_bad_gate_polygon(client):
+    register_and_login(client)
+    ds = client.post('/api/dataset/new', data={'dataset_name': 'DS'}).get_json()['dataset']
+    batch = client.post('/api/batch/new', data={'dataset_id': ds['dataset_id']}).get_json()['batch']
+    client.post('/upload', data={'dataset': ds['dataset_id'], 'batch': batch['batch_id'],
+                                 'file': (io.BytesIO(b'x'), 's.fcs')}, content_type='multipart/form-data')
+    file_id = client.get('/api/uploads').get_json()['uploads'][0]['file_id']
+    res = client.put('/sample', json={'file_id': file_id, 'polygon': [[0, 0], [1, 1]]})
+    assert res.status_code == 400

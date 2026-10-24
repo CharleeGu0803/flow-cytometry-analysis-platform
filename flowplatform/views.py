@@ -195,33 +195,48 @@ def sample_page():
     ch_list = analysis.channel_names(panel)
     return render_template('sample.htm',
                            file_id=f.id,
-                           batch_id=f.batch_id,
+                           batch=f.batch,
                            sample_filename=os.path.splitext(f.file_name)[0],
                            ch_list=ch_list,
+                           scatter_channels=analysis.SCATTER_CHANNELS,
                            default_x=ch_list[8] if len(ch_list) > 8 else ch_list[0],
                            default_y=ch_list[9] if len(ch_list) > 9 else ch_list[3],
-                           gates=panel['gates'])
+                           gates=[{'gate_id': gt['gate_id'], 'gate_name': gt['gate_name'].strip(),
+                                   'ch_X': gt['ch_X'], 'ch_Y': gt['ch_Y']} for gt in panel['gates']])
 
 
 @bp.route('/sample', methods=['PUT'])
 @login_required
 def sample_update():
-    """Re-render the plot for the given settings and return the number of events inside the region."""
-    f = _own_file(_int_arg(request.args.get('file_id')))
+    """Re-render the plot for the given settings and return the number of events inside the gate.
+
+    The gate is either one of the panel's predefined gates (``gate_id``) or a polygon the user
+    drew on the plot (``polygon``, vertices in the current axis scales).
+    """
+    params = request.get_json(silent=True) or request.args
+    f = _own_file(_int_arg(params.get('file_id')))
     if not f:
         return _error('File not found', 404)
     panel = current_app.config['PANEL']
 
-    ch_x = request.args.get('ch_X', 'FSC-A')
-    ch_y = request.args.get('ch_Y', 'SSC-A')
-    x_scale = 'logicle' if request.args.get('ch_X_scale') == 'logicle' else 'linear'
-    y_scale = 'logicle' if request.args.get('ch_Y_scale') == 'logicle' else 'linear'
-    bounds = [_float_arg(request.args.get(k)) for k in ('x_min', 'x_max', 'y_min', 'y_max')]
+    ch_x = params.get('ch_X', 'FSC-A')
+    ch_y = params.get('ch_Y', 'SSC-A')
+    x_scale = params.get('ch_X_scale') if params.get('ch_X_scale') in analysis.SCALES else 'linear'
+    y_scale = params.get('ch_Y_scale') if params.get('ch_Y_scale') in analysis.SCALES else 'linear'
+    bounds = [_float_arg(params.get(k)) for k in ('x_min', 'x_max', 'y_min', 'y_max')]
 
-    gate_id = _int_arg(request.args.get('gate_id'))
+    gate_id = _int_arg(params.get('gate_id'))
     gate = next((gt for gt in panel['gates'] if gt['gate_id'] == gate_id), None)
     if gate:
         ch_x, ch_y = gate['ch_X'], gate['ch_Y']
+
+    drawn = params.get('polygon') if not gate else None
+    try:
+        drawn = analysis.gate_vertices(drawn) if drawn else None
+    except (TypeError, ValueError, KeyError, IndexError):
+        return _error('Invalid gate polygon', 400)
+    if drawn is not None and len(drawn) < 3:
+        return _error('A gate needs at least 3 points', 400)
 
     try:
         x, y = analysis.load_channel_pair(f.file_path, panel, ch_x, ch_y, x_scale, y_scale)
@@ -231,18 +246,14 @@ def sample_update():
         current_app.logger.exception('Failed to read %s', f.file_path)
         return _error(f'Could not read FCS file: {e}', 500)
 
-    data_range = [x.min(), x.max(), y.min(), y.max()]
-    if gate:
-        polygon = analysis.gate_polygon(gate, x_scale, y_scale)
-        limits = data_range
-    else:
-        limits = [b if b is not None else d for b, d in zip(bounds, data_range)]
-        polygon = None
-        if None not in bounds:
-            x0, x1, y0, y1 = bounds
-            polygon = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    data_range = [float(v) for v in (x.min(), x.max(), y.min(), y.max())] if len(x) else [0.0, 1.0, 0.0, 1.0]
+    limits = [b if b is not None else d for b, d in zip(bounds, data_range)]
+    if limits[0] >= limits[1] or limits[2] >= limits[3]:
+        return _error('Axis minimum must be smaller than maximum', 400)
+    polygon = analysis.gate_polygon(gate, x_scale, y_scale) if gate else drawn
 
-    count = analysis.count_in_polygon(x, y, polygon) if polygon is not None else int(len(x))
+    total = int(len(x))
+    count = analysis.count_in_polygon(x, y, polygon) if polygon is not None else total
 
     fig = analysis.density_plot(x, y, ch_x, ch_y, x_scale, y_scale, limits=limits, polygon=polygon)
     out = _plot_path(f.id)
@@ -250,7 +261,9 @@ def sample_update():
     fig.savefig(out)
     analysis.plt.close(fig)
 
-    return jsonify({'cell_count': count, 'ch_X': ch_x, 'ch_Y': ch_y})
+    return jsonify({'success': True, 'cell_count': count, 'total': total, 'gated': polygon is not None,
+                    'ch_X': ch_x, 'ch_Y': ch_y, 'ch_X_scale': x_scale, 'ch_Y_scale': y_scale,
+                    'limits': limits, 'axes': analysis.PLOT_AXES})
 
 
 @bp.route('/sample/plot')
