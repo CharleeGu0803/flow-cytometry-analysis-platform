@@ -253,17 +253,11 @@ Flow Cytometry Datasets
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        window.location.href = '/login';
-        return;
-    }
 
-    // 验证 token 并获取用户信息
+    // Confirm the session is still valid and get the user info
     fetch('/api/check_auth', {
         method: 'GET',
         headers: {
-            'Authorization': token,
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
@@ -286,7 +280,6 @@ document.addEventListener("DOMContentLoaded", function() {
         fetch('/api/datasets?timestamp=' + new Date().getTime(), {
             method: 'GET',
             headers: {
-                'Authorization': token,
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
@@ -375,7 +368,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     fetch('/api/dataset/delete', {
                         method: 'POST',
                         headers: {
-                            'Authorization': token,
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: formData
@@ -407,7 +399,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     fetch('/api/batch/delete', {
                         method: 'POST',
                         headers: {
-                            'Authorization': token,
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: formData
@@ -441,7 +432,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     fetch('/api/batch/new', {
                         method: 'POST',
                         headers: {
-                            'Authorization': token,
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: formData
@@ -472,7 +462,6 @@ document.addEventListener("DOMContentLoaded", function() {
             fetch('/api/dataset/new', {
                 method: 'POST',
                 headers: {
-                    'Authorization': token,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: formData

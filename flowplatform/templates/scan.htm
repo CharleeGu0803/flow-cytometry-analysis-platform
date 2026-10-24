@@ -323,11 +323,6 @@ function loadBatches(datasetId) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    window.location.href = '/login';
-    return;
-  }
   document.getElementById('file').addEventListener('change', function () {
   const labelText = document.getElementById('file-label-text');
   const fileDisplay = document.getElementById('selected-filename');
@@ -342,11 +337,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-  // 验证 token 并获取用户信息
+  // Confirm the session is still valid and get the user info
   fetch('/api/check_auth', {
     method: 'GET',
     headers: {
-      'Authorization': token,
       'X-Requested-With': 'XMLHttpRequest'
     }
   })
@@ -369,7 +363,6 @@ document.addEventListener("DOMContentLoaded", function() {
     fetch('/api/datasets?timestamp=' + new Date().getTime(), {
       method: 'GET',
       headers: {
-        'Authorization': token,
         'X-Requested-With': 'XMLHttpRequest'
       }
     })
@@ -397,7 +390,6 @@ document.addEventListener("DOMContentLoaded", function() {
   fetch('/upload', {
     method: 'POST',
     headers: {
-      'Authorization': token,
       'X-Requested-With': 'XMLHttpRequest'
     },
     body: formData

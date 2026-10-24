@@ -357,7 +357,6 @@
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(event) {
                     event.preventDefault();
-                    localStorage.removeItem('authToken');
                     window.location.href = '/logout';
                 });
             }

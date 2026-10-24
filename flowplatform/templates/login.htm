@@ -42,9 +42,6 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     .then(data => {
         if (data.success) {
             alert(data.message);
-            if (data.token) {
-                localStorage.setItem('authToken', data.token);
-            }
             // 强制转换布尔值，确保不是字符串 "false"
             const isAdmin = String(data.is_admin).toLowerCase() === "true";
             window.location.href = isAdmin ? '/admin' : '/edit';

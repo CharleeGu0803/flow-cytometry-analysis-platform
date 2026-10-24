@@ -50,11 +50,7 @@
 
 <script>
 function fetchUsers() {
-    fetch('/api/admin/users', {
-        headers: {
-            'Authorization': localStorage.getItem('authToken')
-        }
-    })
+    fetch('/api/admin/users', {})
     .then(res => res.json())
     .then(data => {
         if (data.success) {
@@ -87,9 +83,6 @@ function deleteUser(userId) {
     formData.append('user_id', userId);
     fetch('/api/admin/delete_user', {
         method: 'POST',
-        headers: {
-            'Authorization': localStorage.getItem('authToken')
-        },
         body: formData
     })
     .then(res => res.json())
