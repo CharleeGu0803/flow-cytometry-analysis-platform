@@ -26,6 +26,13 @@ def create_app(config=None):
         return {'current_user': g.get('user')}
 
     from . import admin, views
+
+    @app.template_filter('plural')
+    def plural(count, singular, plural_form=None):
+        return f'{count} {singular if count == 1 else plural_form or singular + "s"}'
+
+    app.add_template_filter(views.utc_iso, 'utc_iso')
+
     app.register_blueprint(views.bp)
     app.register_blueprint(admin.bp)
 

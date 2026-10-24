@@ -1,58 +1,91 @@
 {% extends "base.htm" %}
 
-{% block page_title %}用户登录{% endblock %}
+{% block page_title %}Log in{% endblock %}
 
 {% block page_body %}
-<div class="box">
-    <div class="item-list">
-        <h1>Login to Flow Platform</h1>
-        <form method="POST" action="/login" id="loginForm">
-            <table>
-                <tr>
-                    <td class="table_header">Username：</td>
-                    <td><input type="text" name="username" required></td>
-                </tr>
-                <tr>
-                    <td class="table_header">Password：</td>
-                    <td><input type="password" name="password" required></td>
-                </tr>
-            </table>
-            <br>
-            <button class="nav-button" type="submit">Login</button>
+<div class="auth-wrapper">
+    <div class="brand">
+        <i class="fas fa-microscope"></i>
+        <span>Flow Cytometry Platform</span>
+    </div>
+
+    <div class="card auth-card">
+        <h1>Log in to Flow Cytometry Platform</h1>
+
+        {% if request.args.get('registered') %}
+        <div class="alert alert-success" role="status">
+            <i class="fas fa-circle-check"></i>
+            <span>Account created. You can now log in.</span>
+        </div>
+        {% endif %}
+        <div class="alert alert-error" id="login-error" role="alert" hidden>
+            <i class="fas fa-circle-exclamation"></i>
+            <span></span>
+        </div>
+
+        <form method="POST" action="/login" id="loginForm" novalidate>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control"
+                       autocomplete="username" autofocus required>
+            </div>
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="password" class="form-label">Password</label>
+                    <a href="#" id="forgot-link" style="font-size: 14px;">Forgot password?</a>
+                </div>
+                <div class="password-field">
+                    <input type="password" id="password" name="password" class="form-control"
+                           autocomplete="current-password" required>
+                    <button type="button" class="icon-btn" onclick="togglePassword(this)" aria-label="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="form-hint" id="forgot-hint" hidden>
+                    Ask an administrator to reset your password from <b>Manage Users</b>.
+                </div>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" id="login-btn">Log in</button>
         </form>
-        <br>
-        <p>No account？<a href="/register">Register</a></p>
+        <p class="auth-footer">No account? <a href="/register">Create one</a></p>
     </div>
 </div>
 
 <script>
-document.getElementById('loginForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // 阻止表单默认提交
-    const form = event.target;
-    const formData = new FormData(form);
+document.getElementById('forgot-link').addEventListener('click', function (event) {
+    event.preventDefault();
+    document.getElementById('forgot-hint').hidden = false;
+});
 
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            // 强制转换布尔值，确保不是字符串 "false"
-            const isAdmin = String(data.is_admin).toLowerCase() === "true";
-            window.location.href = isAdmin ? '/admin' : '/edit';
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Login failed. Please try again later');
-    });
+document.getElementById('loginForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const error = document.getElementById('login-error');
+    const button = document.getElementById('login-btn');
+    const username = this.username.value.trim();
+    const password = this.password.value;
+
+    const showError = message => {
+        error.querySelector('span').textContent = message;
+        error.hidden = false;
+    };
+    if (!username || !password) {
+        showError('Enter your username and password.');
+        return;
+    }
+
+    error.hidden = true;
+    button.disabled = true;
+    button.textContent = 'Logging in…';
+    try {
+        const data = await api('/login', {method: 'POST', form: {username, password}});
+        window.location.href = data.redirect || '/';
+    } catch (err) {
+        showError(err.message);
+        this.password.value = '';
+        this.password.focus();
+        button.disabled = false;
+        button.textContent = 'Log in';
+    }
 });
 </script>
 {% endblock %}

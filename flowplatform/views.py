@@ -16,6 +16,7 @@ bp = Blueprint('main', __name__)
 
 # Usernames are rendered into admin pages, so keep them to a safe character set.
 USERNAME_RE = re.compile(r'[A-Za-z0-9_.-]{3,50}')
+MIN_PASSWORD_LEN = 6
 
 
 # ---------- helpers ----------
@@ -32,6 +33,13 @@ def _float_arg(value):
         return float(value) if value not in (None, '') else None
     except ValueError:
         return None
+
+
+def utc_iso(dt):
+    """ISO 8601 string for a stored UTC timestamp (SQLite drops the tzinfo), so browsers can show local time."""
+    if dt is None:
+        return ''
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).isoformat()
 
 
 def _error(message, status):
@@ -84,7 +92,7 @@ def login():
         return render_template('login.htm')
     user = User.query.filter_by(username=request.form.get('username', '')).first()
     if not user or not check_password_hash(user.password, request.form.get('password', '')):
-        return jsonify({'success': False, 'message': 'Incorrect user name or password'})
+        return jsonify({'success': False, 'message': 'Incorrect username or password'})
     session.clear()
     session['user_id'] = user.id
     return jsonify({'success': True, 'message': 'Login Successful',
@@ -105,13 +113,13 @@ def register():
     password = request.form.get('password') or ''
     if not USERNAME_RE.fullmatch(username):
         return jsonify({'success': False, 'message': 'Username must be 3-50 letters, digits, ".", "_" or "-"'})
-    if len(password) < 6:
-        return jsonify({'success': False, 'message': 'Password must be at least 6 characters'})
+    if len(password) < MIN_PASSWORD_LEN:
+        return jsonify({'success': False, 'message': f'Password must be at least {MIN_PASSWORD_LEN} characters'})
     if User.query.filter_by(username=username).first():
         return jsonify({'success': False, 'message': 'Username already exists'})
     db.session.add(User(username=username, password=generate_password_hash(password)))
     db.session.commit()
-    return jsonify({'success': True, 'message': 'Successful registration', 'redirect': '/login'})
+    return jsonify({'success': True, 'message': 'Account created', 'redirect': '/login?registered=1'})
 
 
 @bp.route('/api/check_auth')
