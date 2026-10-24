@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Cytometry Analysis Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<!--    <title>{% block page_title %}Default Title{% endblock %}</title>-->
+    <style>
+        :root {
+            --primary-color: #1a237e;
+            --secondary-color: #3949ab;
+            --accent-color: #e53935;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --sidebar-width: 250px;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            background-image:
+                    radial-gradient(circle at 10% 20%, rgba(26, 35, 126, 0.05) 0%, transparent 20%),
+                    radial-gradient(circle at 90% 80%, rgba(57, 73, 171, 0.05) 0%, transparent 20%);
+        }
+
+        h1 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 28px;
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 i {
+            color: var(--accent-color);
+        }
+
+        h2 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 20px;
+            color: var(--secondary-color);
+            font-weight: 500;
+        }
+
+        #top-strip {
+            width: 100%;
+            height: 60px;
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        #top-strip i {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        #top-strip::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+            linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%),
+            linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
+            background-size: 20px 20px;
+            opacity: 0.1;
+        }
+
+        #top-strip-lower {
+            width: 100%;
+            height: 4px;
+            background-color: var(--accent-color);
+            position: fixed;
+            top: 60px;
+            z-index: 1000;
+        }
+
+        .left-nav {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 64px;
+            background-color: white;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .body-content {
+            margin-left: calc(var(--sidebar-width) + 40px);
+            margin-top: 80px;
+            padding: 20px;
+            max-width: 1200px;
+        }
+
+        .nav-button {
+            width: 100%;
+            background-color: transparent;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-color);
+            text-align: left;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--accent-color);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .nav-button:hover::before {
+            transform: scaleY(1);
+        }
+
+        .nav-button i {
+            width: 20px;
+            text-align: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--secondary-color);
+        }
+
+        .box {
+            display: flex;
+            align-items: stretch;
+            gap: 20px;
+        }
+
+        .item-list {
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            color: var(--text-color);
+            font-weight: 500;
+            margin-left: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .image-table-container {
+            flex: 1;
+        }
+
+        .image-table {
+            list-style-type: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .image-table li {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .image-table li:hover {
+            transform: translateY(-5px);
+        }
+
+        .image-table li img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .large-image-container {
+            flex: 2;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .large-image-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        canvas {
+            background: white;
+            display: block;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 添加响应式设计 */
+        @media (max-width: 768px) {
+            .left-nav {
+                width: 60px;
+            }
+
+            .body-content {
+                margin-left: 80px;
+            }
+
+            .nav-button span {
+                display: none;
+            }
+
+            .nav-button i {
+                margin: 0 auto;
+            }
+        }
+
+        /* 添加血液细胞动画效果 */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating-cell {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, var(--accent-color), var(--primary-color));
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 3s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="top-strip">
+        <i class="fas fa-microscope"></i>
+        <span>Flow Cytometry Analysis</span>
+    </div>
+    <div id="top-strip-lower"></div>
+
+    <div class="left-nav">
+        <a href="/">
+            <div class="nav-button">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+        </a>
+
+        <a href="/scan">
+            <div class="nav-button">
+                <i class="fas fa-upload"></i>
+                <span>Update Files</span>
+            </div>
+        </a>
+
+        {% if current_user %}
+        <a href="/logout" id="logoutBtn">
+            <div class="nav-button">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </div>
+        </a>
+        {% else %}
+        <a href="/login">
+            <div class="nav-button">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </div>
+        </a>
+        {% endif %}
+
+        <a href="/edit">
+            <div class="nav-button">
+                <i class="fas fa-database"></i>
+                <span>Datasets</span>
+            </div>
+        </a >
+
+        {% if current_user and current_user.is_admin %}
+        <a href="/admin">
+            <div class="nav-button">
+                <i class="fas fa-users-cog"></i>
+                <span>Manage Users</span>
+            </div>
+        </a>
+        {% endif %}
+
+
+
+
+    </div>
+
+    <div class="body-content">
+        <!-- 使用不同的 block 名称 -->
+        <h1>{% block page_heading %}{% endblock %}</h1>
+        {% block page_body %}{% endblock %}
+    </div>
+
+    {% block page_footer %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/logout';
+                });
+            }
+        });
+
+        // 添加浮动血液细胞效果
+        function createFloatingCells() {
+            for (let i = 0; i < 10; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'floating-cell';
+                cell.style.left = Math.random() * 100 + 'vw';
+                cell.style.top = Math.random() * 100 + 'vh';
+                cell.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(cell);
+            }
+        }
+
+        createFloatingCells();
+    </script>
+    {% endblock %}
+</body>
+</html>

@@ -1,0 +1,353 @@
+{
+ "channels": [
+  {
+   "ch_name": "CD45 RA Alexa 488",
+   "fluoro_name": "488-530/30-A",
+   "ch_idx": 0,
+   "active": 1
+  },
+  {
+   "ch_name": "CD33 BB630",
+   "fluoro_name": "488-610/20-A",
+   "ch_idx": 1,
+   "active": 1
+  },
+  {
+   "ch_name": "gd BB700",
+   "fluoro_name": "488-695/40-A",
+   "ch_idx": 2,
+   "active": 1
+  },
+  {
+   "ch_name": "CD38 BB780",
+   "fluoro_name": "488-780/60-A",
+   "ch_idx": 3,
+   "active": 1
+  },
+  {
+   "ch_name": "CD161 APC",
+   "fluoro_name": "640-670/30-A",
+   "ch_idx": 4,
+   "active": 1
+  },
+  {
+   "ch_name": "CD16 Alexa 700",
+   "fluoro_name": "640-730/45-A",
+   "ch_idx": 5,
+   "active": 1
+  },
+  {
+   "ch_name": "CCR7 APC Cy7",
+   "fluoro_name": "640-780/60-A",
+   "ch_idx": 6,
+   "active": 1
+  },
+  {
+   "ch_name": "CD69 BV421",
+   "fluoro_name": "405-450/50-A",
+   "ch_idx": 7,
+   "active": 1
+  },
+  {
+   "ch_name": "CD14 19 BV510",
+   "fluoro_name": "405-525/50-A",
+   "ch_idx": 8,
+   "active": 1
+  },
+  {
+   "ch_name": "Va7_2 BV605",
+   "fluoro_name": "405-610/20-A",
+   "ch_idx": 9,
+   "active": 1
+  },
+  {
+   "ch_name": "CD3 BV650",
+   "fluoro_name": "405-670/30-A",
+   "ch_idx": 10,
+   "active": 1
+  },
+  {
+   "ch_name": "CD39 BV711",
+   "fluoro_name": "405-710/50-A",
+   "ch_idx": 11,
+   "active": 1
+  },
+  {
+   "ch_name": "HLA DR BV786",
+   "fluoro_name": "405-780/60-A",
+   "ch_idx": 12,
+   "active": 1
+  },
+  {
+   "ch_name": "CD8 BUV 395",
+   "fluoro_name": "355-379/28-A",
+   "ch_idx": 13,
+   "active": 1
+  },
+  {
+   "ch_name": "CD4 BUV 496",
+   "fluoro_name": "355-515/30-A",
+   "ch_idx": 14,
+   "active": 1
+  },
+  {
+   "ch_name": "CD56 BUV 563",
+   "fluoro_name": "355-580/20-A",
+   "ch_idx": 15,
+   "active": 1
+  },
+  {
+   "ch_name": "6B11 BVU 661",
+   "fluoro_name": "355-675/20-A",
+   "ch_idx": 16,
+   "active": 1
+  },
+  {
+   "ch_name": "CD137 BUV 737",
+   "fluoro_name": "355-735/30-A",
+   "ch_idx": 17,
+   "active": 1
+  },
+  {
+   "ch_name": "TIM3 PE",
+   "fluoro_name": "561-585/15-A",
+   "ch_idx": 18,
+   "active": 1
+  },
+  {
+   "ch_name": "PD1 ef610",
+   "fluoro_name": "561-610/20-A",
+   "ch_idx": 19,
+   "active": 1
+  },
+  {
+   "ch_name": "CD25 PECF594",
+   "fluoro_name": "561-780/60-A",
+   "ch_idx": 20,
+   "active": 1
+  },
+  {
+   "ch_name": "VD2 BV805",
+   "fluoro_name": "355-810/40-A",
+   "ch_idx": 21,
+   "active": 1
+  }
+ ],
+ "gates": [
+  {
+   "gate_id": 0,
+   "gate_name": "CD8 ",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "CD8 BUV 395",
+   "ch_Y": "CD69 BV421",
+   "coords": [
+    {
+     "x": 159365,
+     "y": 147456
+    },
+    {
+     "x": 158980,
+     "y": 136897
+    },
+    {
+     "x": 127800,
+     "y": 104857
+    },
+    {
+     "x": 108937,
+     "y": 112867
+    },
+    {
+     "x": 113557,
+     "y": 143451
+    },
+    {
+     "x": 139733,
+     "y": 158378
+    },
+    {
+     "x": 152051,
+     "y": 157286
+    }
+   ]
+  },
+  {
+   "gate_id": 2,
+   "gate_name": "t_cells",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "CD3 BV650",
+   "ch_Y": "CD45 RA Alexa 488",
+   "coords": [
+    {
+     "x": 255812,
+     "y": 129795
+    },
+    {
+     "x": 216131,
+     "y": 129795
+    },
+    {
+     "x": 216131,
+     "y": 176181
+    },
+    {
+     "x": 214020,
+     "y": 239163
+    },
+    {
+     "x": 235971,
+     "y": 242568
+    },
+    {
+     "x": 256656,
+     "y": 243844
+    }
+   ]
+  },
+  {
+   "gate_id": 3,
+   "gate_name": "cells",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "FSC-A",
+   "ch_Y": "SSC-A",
+   "coords": [
+    {
+     "x": 51966,
+     "y": 0
+    },
+    {
+     "x": 8468,
+     "y": 0
+    },
+    {
+     "x": 7313,
+     "y": 46967
+    },
+    {
+     "x": 6928,
+     "y": 246124
+    },
+    {
+     "x": 253675,
+     "y": 83012
+    },
+    {
+     "x": 93540,
+     "y": 8374
+    }
+   ]
+  },
+  {
+   "gate_id": 4,
+   "gate_name": "single_cells",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "FSC-A",
+   "ch_Y": "FSC-H",
+   "coords": [
+    {
+     "x": 137808,
+     "y": 131800
+    },
+    {
+     "x": 147431,
+     "y": 127431
+    },
+    {
+     "x": 29255,
+     "y": 18932
+    },
+    {
+     "x": 20016,
+     "y": 22937
+    }
+   ]
+  },
+  {
+   "gate_id": 5,
+   "gate_name": "CD8_CD3",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "CD8 BUV 395",
+   "ch_Y": "CD3 BV650",
+   "coords": [
+    {
+     "x": 198402,
+     "y": 249802
+    },
+    {
+     "x": 230484,
+     "y": 258739
+    },
+    {
+     "x": 241881,
+     "y": 226397
+    },
+    {
+     "x": 199246,
+     "y": 213630
+    }
+   ]
+  },
+  {
+   "gate_id": 6,
+   "gate_name": "CD38_CD161",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "CD38 BB780",
+   "ch_Y": "CD161 APC",
+   "coords": [
+    {
+     "x": 246102,
+     "y": 208098
+    },
+    {
+     "x": 246102,
+     "y": 149371
+    },
+    {
+     "x": 216553,
+     "y": 148945
+    },
+    {
+     "x": 216975,
+     "y": 209374
+    }
+   ]
+  },
+  {
+   "gate_id": 7,
+   "gate_name": "CD14_CD161",
+   "gate_type": "GATE_CELLS",
+   "ch_X": "CD14 19 BV510",
+   "ch_Y": "CD161 APC",
+   "coords": [
+    {
+     "x": 131264,
+     "y": 206802
+    },
+    {
+     "x": 156285,
+     "y": 195879
+    },
+    {
+     "x": 163599,
+     "y": 183500
+    },
+    {
+     "x": 149356,
+     "y": 150368
+    },
+    {
+     "x": 121256,
+     "y": 143815
+    },
+    {
+     "x": 113557,
+     "y": 152189
+    },
+    {
+     "x": 112402,
+     "y": 177311
+    }
+   ]
+  }
+ ]
+}

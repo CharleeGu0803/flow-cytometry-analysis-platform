@@ -1,0 +1,40 @@
+{% extends "base.htm" %}
+
+{% block page_title %}
+Batch: {{ batch['batch_name'] }}
+{% endblock %}
+
+{% block page_body %}
+<!-- Container for the title and download link -->
+<div style="display: flex; align-items: center;">
+    <a href="/download_batch_report?batch_id={{ batch['batch_id'] }}" class="btn btn-primary"
+       style="margin-left: 1px; font-family: inherit; font-size: inherit; font-weight: bold; text-decoration: underline;">
+        Download Report
+    </a>
+</div>
+
+<br>
+
+<table width="70%">
+    <tr class="table_header">
+        <td><span>File ID</span></td>
+        <td>File Name</td>
+        <td>File Type</td>
+        <td>Uploaded At</td>
+    </tr>
+    <tr>
+        <td colspan="4"><hr></td>
+    </tr>
+    {% for file in batch['files'] %}
+    <tr>
+        <td>{{ file['id'] }}</td>
+        <td><b><a href="/sample?file_id={{ file['id'] }}">{{ file['file_name'] }}</a></b></td>
+        <td>{{ file['file_type'] }}</td>
+        <td>{{ file['uploaded_at'] }}</td>
+    </tr>
+    <tr>
+        <td colspan="4"><hr></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

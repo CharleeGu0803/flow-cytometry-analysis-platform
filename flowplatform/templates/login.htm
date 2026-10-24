@@ -1,0 +1,61 @@
+{% extends "base.htm" %}
+
+{% block page_title %}用户登录{% endblock %}
+
+{% block page_body %}
+<div class="box">
+    <div class="item-list">
+        <h1>Login to Flow Platform</h1>
+        <form method="POST" action="/login" id="loginForm">
+            <table>
+                <tr>
+                    <td class="table_header">Username：</td>
+                    <td><input type="text" name="username" required></td>
+                </tr>
+                <tr>
+                    <td class="table_header">Password：</td>
+                    <td><input type="password" name="password" required></td>
+                </tr>
+            </table>
+            <br>
+            <button class="nav-button" type="submit">Login</button>
+        </form>
+        <br>
+        <p>No account？<a href="/register">Register</a></p>
+    </div>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // 阻止表单默认提交
+    const form = event.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            if (data.token) {
+                localStorage.setItem('authToken', data.token);
+            }
+            // 强制转换布尔值，确保不是字符串 "false"
+            const isAdmin = String(data.is_admin).toLowerCase() === "true";
+            window.location.href = isAdmin ? '/admin' : '/edit';
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Login failed. Please try again later');
+    });
+});
+</script>
+{% endblock %}

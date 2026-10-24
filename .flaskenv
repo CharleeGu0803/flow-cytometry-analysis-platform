@@ -1,0 +1,2 @@
+FLASK_APP=flowplatform
+FLASK_DEBUG=1

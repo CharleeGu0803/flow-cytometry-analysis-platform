@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local configuration and secrets
+.env
+
+# Runtime data: database, uploaded FCS files, generated plots
+data/
+*.db
+*.fcs
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,130 @@
+{% extends "base.htm" %}
+
+{% block page_title %}
+Batch: {% endblock %}
+
+{% block page_body %}
+
+<a href="/batch?batch_id={{ batch_id }}" style="font-size: 14px; text-decoration: none; color: #007bff;">← Back to Samples</a>
+<hr style="border-top: 1px solid #ccc;">
+
+<div class="container"
+     style="display: flex; justify-content: space-between; width: 100%; max-width: 1200px; margin: 0 auto;">
+    <!-- 左侧：图表 -->
+    <div style="flex: 1; margin-right: 20px;">
+        <h2 style="font-size: 24px; margin-bottom: 10px;">{{ step_title }}</h2>
+        <p style="font-size: 16px; color: #555;">{{ sample_filename }}</p>
+        <img id="plot_image" alt="Plot is being generated..."
+             style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+
+    </div>
+
+    <!-- 右侧：工具框 -->
+    <div style="flex: 0 0 350px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+        <h3 style="margin-bottom: 20px;">Adjust Plot Settings</h3>
+        <form method="GET" action="/sample">
+            <div>
+                <b>X-axis:</b>
+                <select id="ch_X" name="ch_X" onchange="refresh_plot()" style="width: 100%; margin-bottom: 10px;">
+                    {% for ch_name in ch_list %}
+                    <option value="{{ ch_name }}" {% if ch_name == default_x %}selected{% endif %}>{{ ch_name }}</option>
+                    {% endfor %}
+                </select>
+
+                <b>X-axis scale:</b>
+                <select id="ch_X_scale" name="ch_X_scale" onchange="refresh_plot()"
+                        style="width: 100%; margin-bottom: 10px;">
+                    <option value="linear">Linear</option>
+                    <option value="logicle">Logarithmic</option>
+                </select>
+
+                <b>X-axis Min:</b>
+                <input type="number" id="x_min" name="x_min" onchange="refresh_plot()"
+                       style="width: 100%; margin-bottom: 10px;">
+
+                <b>X-axis Max:</b>
+                <input type="number" id="x_max" name="x_max" onchange="refresh_plot()"
+                       style="width: 100%; margin-bottom: 20px;">
+            </div>
+
+            <div>
+                <b>Y-axis:</b>
+                <select id="ch_Y" name="ch_Y" onchange="refresh_plot()" style="width: 100%; margin-bottom: 10px;">
+                    {% for ch_name in ch_list %}
+                    <option value="{{ ch_name }}" {% if ch_name == default_y %}selected{% endif %}>{{ ch_name }}</option>
+                    {% endfor %}
+                </select>
+
+                <b>Y-axis scale:</b>
+                <select id="ch_Y_scale" name="ch_Y_scale" onchange="refresh_plot()"
+                        style="width: 100%; margin-bottom: 10px;">
+                    <option value="linear">Linear</option>
+                    <option value="logicle">Logarithmic</option>
+                </select>
+
+                <b>Y-axis Min:</b>
+                <input type="number" id="y_min" name="y_min" onchange="refresh_plot()"
+                       style="width: 100%; margin-bottom: 10px;">
+
+                <b>Y-axis Max:</b>
+                <input type="number" id="y_max" name="y_max" onchange="refresh_plot()"
+                       style="width: 100%; margin-bottom: 20px;">
+            </div>
+
+            <!-- Gate选择下拉菜单 -->
+            <div style="margin-bottom: 20px;">
+                <b>Select Gate:</b>
+                <select id="gate_select" name="gate_select" onchange="refresh_plot()"
+                        style="width: 100%; margin-bottom: 10px;">
+                    <option value="-1">--Select Gate--</option>
+                    {% for gate in gates %}
+                    <option value="{{ gate.gate_id }}">{{ gate.gate_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <b>Number of cells in range:</b> <span id="cell_count" style="font-size: 16px; color: #333;">0</span>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    const fileId = {{ file_id | tojson }};
+    let pending = null;
+
+    function refresh_plot() {
+        const params = new URLSearchParams({file_id: fileId});
+        for (const id of ['ch_X', 'ch_Y', 'ch_X_scale', 'ch_Y_scale', 'x_min', 'x_max', 'y_min', 'y_max']) {
+            params.set(id, document.getElementById(id).value);
+        }
+        params.set('gate_id', document.getElementById('gate_select').value);
+
+        if (pending) pending.abort();
+        pending = new AbortController();
+        document.getElementById('cell_count').innerText = '...';
+
+        fetch('/sample?' + params.toString(), {method: 'PUT', signal: pending.signal})
+            .then(res => res.json().then(data => ({ok: res.ok, data})))
+            .then(({ok, data}) => {
+                if (!ok) throw new Error(data.message || 'Request failed');
+                document.getElementById('cell_count').innerText = data.cell_count;
+                // Cache-bust so the browser fetches the freshly rendered plot
+                document.getElementById('plot_image').src = '/sample/plot?file_id=' + fileId + '&t=' + Date.now();
+            })
+            .catch(err => {
+                if (err.name !== 'AbortError') {
+                    document.getElementById('cell_count').innerText = 'Error: ' + err.message;
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', refresh_plot);
+</script>
+
+{% endblock %}
+
+{% block page_footer %}
+{% endblock %}

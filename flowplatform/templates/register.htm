@@ -1,0 +1,55 @@
+{% extends "base.htm" %}
+
+{% block page_title %}用户注册{% endblock %}
+
+{% block page_body %}
+<div class="box">
+    <div class="item-list">
+        <h1>Register Flow Platform</h1>
+        <form method="POST" action="/register" id="registerForm">
+            <table>
+                <tr>
+                    <td class="table_header">username：</td>
+                    <td><input type="text" name="username" required></td>
+                </tr>
+                <tr>
+                    <td class="table_header">password：</td>
+                    <td><input type="password" name="password" required></td>
+                </tr>
+            </table>
+            <br>
+            <button class="nav-button" type="submit">register</button>
+        </form>
+        <br>
+        <p>Has an account？<a href="/login">login</a></p>
+    </div>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // 阻止表单默认提交
+    var form = event.target;
+    var formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert(data.message);
+            window.location.href = data.redirect;
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+</script>
+{% endblock %}
