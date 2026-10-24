@@ -1,60 +1,53 @@
 {% extends "base.htm" %}
 
-{% block page_title %}User Files{% endblock %}
+{% block page_title %}Files of {{ user.username }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="/admin">User Management</a>
+<i class="fas fa-chevron-right sep"></i>
+<span class="current">{{ user.username }}</span>
+{% endblock %}
 
 {% block page_body %}
-<h2>Files Uploaded by {{ user.username }}</h2>
+<div class="page-header">
+    <div>
+        <h1>Files uploaded by {{ user.username }}</h1>
+        <p>{{ files|length|plural('file') }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="/admin" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to User Management</a>
+    </div>
+</div>
 
-{% if files %}
-<table>
-    <thead>
-        <tr>
-            <th>File Name</th>
-            <th>Uploaded At</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for f in files %}
-        <tr>
-            <td>{{ f.file_name }}</td>
-
-            <td>{{ f.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No files uploaded by this user.</p>
-{% endif %}
-
-<a href="/admin" class="nav-button" style="margin-top: 20px; display: inline-block;">Back to Admin Dashboard</a>
-
-<style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        font-family: Arial, sans-serif;
-    }
-    th, td {
-        text-align: center;
-        padding: 12px;
-        border: 1px solid #ddd;
-    }
-    tr:hover {
-        background-color: transparent;
-    }
-    th {
-        background-color: transparent;
-        color: black;
-    }
-    a {
-        color: black;
-        text-decoration: none;
-    }
-    a:hover {
-        text-decoration: none;
-    }
-</style>
-
+<div class="card">
+    {% if files %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Dataset</th>
+                    <th>Batch</th>
+                    <th>Uploaded</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in files %}
+                <tr>
+                    <td>{{ f.file_name }}</td>
+                    <td>{{ f.batch.dataset.dataset_name }}</td>
+                    <td>{{ f.batch.batch_name }}</td>
+                    <td class="muted"><time data-local datetime="{{ f.uploaded_at|utc_iso }}">{{ f.uploaded_at|utc_iso }}</time></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>{{ user.username }} hasn't uploaded any files.</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

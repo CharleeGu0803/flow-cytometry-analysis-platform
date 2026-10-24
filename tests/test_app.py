@@ -131,3 +131,19 @@ def test_fluorescence_gate_scales_agree():
     linear = gate_polygon(gate, 'linear', 'linear')
     assert gate_polygon({**gate, 'ch_X': 'FSC-A', 'coords': [{'x': v, 'y': 0} for v in linear[:, 0]]},
                         'logicle', 'linear')[:, 0] == pytest.approx([0.5, 0.6], abs=1e-4)
+
+
+def test_admin_user_details_and_password_reset(app, client):
+    register_and_login(client, 'alice')
+    client.post('/register', data={'username': 'bob', 'password': 'secret123'})
+    with app.app_context():
+        db.session.execute(db.update(User).where(User.username == 'alice').values(is_admin=True))
+        db.session.commit()
+    users = {u['username']: u for u in client.get('/api/admin/users').get_json()['users']}
+    assert users['alice']['is_self'] and not users['bob']['is_self']
+    assert users['bob']['created_at'].endswith('+00:00')
+
+    bob = users['bob']['user_id']
+    assert client.post('/api/admin/reset_password', data={'user_id': bob, 'password': 'abc'}).status_code == 400
+    assert client.post('/api/admin/reset_password', data={'user_id': bob, 'password': 'newpass1'}).get_json()['success']
+    assert register_and_login(app.test_client(), 'bob', 'newpass1')['success']

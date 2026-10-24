@@ -1,102 +1,103 @@
 {% extends "base.htm" %}
 
-{% block page_title %}Admin - User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block breadcrumb %}<span>Admin</span><i class="fas fa-chevron-right sep"></i><span class="current">User Management</span>{% endblock %}
 
 {% block page_body %}
-<h1><i class="fas fa-user-shield"></i> Admin - User Management Page</h1>
+<div class="page-header">
+    <div>
+        <h1>User Management</h1>
+        <p id="user-summary">Loading users…</p>
+    </div>
+</div>
 
-<div id="userTable" style="margin-top: 30px;">Loading...</div>
-
-<style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        font-family: Arial, sans-serif;
-    }
-    th, td {
-        text-align: center;
-        padding: 12px;
-        border: 1px solid #ddd;
-        color: black; /* 表格文字黑色 */
-    }
-    tr:hover {
-        background-color: #f9f9f9; /* 鼠标悬浮浅灰色 */
-    }
-    th {
-        background-color: transparent; /* 表头透明 */
-        color: black; /* 表头文字黑色 */
-        font-weight: bold;
-    }
-    button {
-        padding: 5px 12px;
-        margin: 2px;
-        border: 1px solid black; /* 按钮边框黑色 */
-        background-color: transparent; /* 按钮背景透明 */
-        color: black; /* 按钮文字黑色 */
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.3s ease;
-        font-size: 14px;
-    }
-    button:hover {
-        background-color: black; /* 鼠标悬停按钮背景变黑 */
-        color: white; /* 鼠标悬停按钮文字变白 */
-    }
-</style>
-
-
-
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th class="num">Datasets</th>
+                    <th class="num">Files</th>
+                    <th>Created</th>
+                    <th class="actions"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody id="user-rows"></tbody>
+        </table>
+    </div>
+</div>
 
 <script>
-function fetchUsers() {
-    fetch('/api/admin/users', {})
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            // 按 username 排序
-            data.users.sort((a, b) => a.username.localeCompare(b.username));
+let users = [];
 
-            let html = '<table>'
-                     + '<thead><tr><th>Username</th><th>File Count</th><th>Operations</th></tr></thead><tbody>';
-            data.users.forEach(u => {
-                html += `<tr>
-                            <td>${u.username}</td>
-                            <td>${u.files.length}</td>
-                            <td>
-                                <button onclick="deleteUser(${u.user_id})">Delete</button>
-                                <button onclick="viewFiles(${u.user_id})">View Files</button>
-                            </td>
-                         </tr>`;
-            });
-            html += '</tbody></table>';
-            document.getElementById('userTable').innerHTML = html;
-        } else {
-            alert(data.message);
-        }
+function renderUsers() {
+    const admins = users.filter(u => u.is_admin).length;
+    document.getElementById('user-summary').textContent =
+        plural(users.length, 'user') + ' · ' + plural(admins, 'administrator');
+    document.getElementById('user-rows').innerHTML = users.map(u => `
+        <tr>
+            <td>${escapeHtml(u.username)} ${u.is_self ? '<span class="badge">You</span>' : ''}</td>
+            <td>${u.is_admin ? '<span class="badge badge-primary">Admin</span>' : '<span class="badge">User</span>'}</td>
+            <td class="num">${u.dataset_count.toLocaleString()}</td>
+            <td class="num">${u.file_count.toLocaleString()}</td>
+            <td class="muted"><time data-local datetime="${escapeHtml(u.created_at)}"></time></td>
+            <td class="actions">
+                <a href="/admin/files?user_id=${u.user_id}" class="btn btn-secondary btn-sm">View files</a>
+                <button class="btn btn-secondary btn-sm" onclick="resetPassword(${u.user_id})">Reset password</button>
+                ${u.is_self
+                    ? '<button class="btn btn-danger-ghost btn-sm" disabled title="You cannot delete your own account"><i class="fas fa-trash-can"></i> Delete</button>'
+                    : `<button class="btn btn-danger-ghost btn-sm" onclick="deleteUser(${u.user_id})"><i class="fas fa-trash-can"></i> Delete</button>`}
+            </td>
+        </tr>`).join('');
+    localizeTimes(document.getElementById('user-rows'));
+}
+
+async function fetchUsers() {
+    try {
+        users = (await api('/api/admin/users')).users;
+        renderUsers();
+    } catch (err) {
+        document.getElementById('user-summary').textContent = 'Could not load users: ' + err.message;
+    }
+}
+
+async function deleteUser(userId) {
+    const u = users.find(x => x.user_id === userId);
+    const ok = await confirmDialog({
+        title: `Delete user “${u.username}”?`,
+        message: `This permanently deletes the account, ${plural(u.dataset_count, 'dataset')} and ${plural(u.file_count, 'file')}. This cannot be undone.`,
+        confirmText: 'Delete user', danger: true,
     });
+    if (!ok) return;
+    try {
+        const data = await api('/api/admin/delete_user', {method: 'POST', form: {user_id: userId}});
+        showToast(data.message);
+        fetchUsers();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }
 
-function deleteUser(userId) {
-    if (!confirm('Are you sure you want to delete this user and all associated files?')) return;
-    const formData = new FormData();
-    formData.append('user_id', userId);
-    fetch('/api/admin/delete_user', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) fetchUsers();
+async function resetPassword(userId) {
+    const u = users.find(x => x.user_id === userId);
+    const password = await promptDialog({
+        title: `Reset password for “${u.username}”`,
+        message: 'Share the new password with the user through a secure channel.',
+        confirmText: 'Reset password',
+        input: {label: 'New password', type: 'password', minLength: 6, placeholder: 'At least 6 characters'},
     });
+    if (!password) return;
+    try {
+        const data = await api('/api/admin/reset_password', {method: 'POST', form: {user_id: userId, password}});
+        showToast(data.message);
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }
 
-function viewFiles(userId) {
-    window.location.href = `/admin/files?user_id=${userId}`;
-}
-
-document.addEventListener('DOMContentLoaded', fetchUsers);
+fetchUsers();
 </script>
-
 {% endblock %}
