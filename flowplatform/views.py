@@ -146,7 +146,7 @@ def home():
 @bp.route('/edit')
 @login_required
 def edit_page():
-    return render_template('edit.htm', dataset_list=_dataset_summary(g.user.id))
+    return render_template('edit.htm')
 
 
 @bp.route('/scan')
@@ -164,8 +164,9 @@ def list_batch():
     batch_data = {
         'batch_id': batch.id,
         'batch_name': batch.batch_name,
-        'files': [{'id': f.id, 'file_name': f.file_name, 'file_type': f.file_type,
-                   'uploaded_at': f.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') if f.uploaded_at else ''}
+        'dataset_id': batch.dataset.id,
+        'dataset_name': batch.dataset.dataset_name,
+        'files': [{'id': f.id, 'file_name': f.file_name, 'uploaded_at': utc_iso(f.uploaded_at)}
                   for f in batch.files],
     }
     return render_template('batch.htm', batch=batch_data)

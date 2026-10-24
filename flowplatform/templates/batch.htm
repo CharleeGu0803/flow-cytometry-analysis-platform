@@ -1,40 +1,67 @@
 {% extends "base.htm" %}
 
-{% block page_title %}
-Batch: {{ batch['batch_name'] }}
+{% block page_title %}{{ batch['batch_name'] }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="/edit">Datasets</a>
+<i class="fas fa-chevron-right sep"></i>
+<span>{{ batch['dataset_name'] }}</span>
+<i class="fas fa-chevron-right sep"></i>
+<span class="current">{{ batch['batch_name'] }}</span>
 {% endblock %}
 
 {% block page_body %}
-<!-- Container for the title and download link -->
-<div style="display: flex; align-items: center;">
-    <a href="/download_batch_report?batch_id={{ batch['batch_id'] }}" class="btn btn-primary"
-       style="margin-left: 1px; font-family: inherit; font-size: inherit; font-weight: bold; text-decoration: underline;">
-        Download Report
-    </a>
+<div class="page-header">
+    <div>
+        <h1>{{ batch['batch_name'] }}</h1>
+        <p>Batch in <b>{{ batch['dataset_name'] }}</b> · {{ batch['files']|length|plural('sample') }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="/scan?dataset={{ batch['dataset_id'] }}&batch={{ batch['batch_id'] }}" class="btn btn-secondary">
+            <i class="fas fa-upload"></i> Upload files
+        </a>
+        <a href="/download_batch_report?batch_id={{ batch['batch_id'] }}"
+           class="btn btn-primary{% if not batch['files'] %} disabled{% endif %}"
+           title="PDF with the cell count of every predefined gate for each sample in this batch">
+            <i class="fas fa-file-pdf"></i> Download gate report (PDF)
+        </a>
+    </div>
 </div>
 
-<br>
-
-<table width="70%">
-    <tr class="table_header">
-        <td><span>File ID</span></td>
-        <td>File Name</td>
-        <td>File Type</td>
-        <td>Uploaded At</td>
-    </tr>
-    <tr>
-        <td colspan="4"><hr></td>
-    </tr>
-    {% for file in batch['files'] %}
-    <tr>
-        <td>{{ file['id'] }}</td>
-        <td><b><a href="/sample?file_id={{ file['id'] }}">{{ file['file_name'] }}</a></b></td>
-        <td>{{ file['file_type'] }}</td>
-        <td>{{ file['uploaded_at'] }}</td>
-    </tr>
-    <tr>
-        <td colspan="4"><hr></td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="card">
+    {% if batch['files'] %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Sample</th>
+                    <th>Uploaded</th>
+                    <th class="actions"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in batch['files'] %}
+                <tr>
+                    <td><a href="/sample?file_id={{ file['id'] }}">{{ file['file_name'] }}</a></td>
+                    <td class="muted"><time data-local datetime="{{ file['uploaded_at'] }}">{{ file['uploaded_at'] }}</time></td>
+                    <td class="actions">
+                        <a href="/sample?file_id={{ file['id'] }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-chart-area"></i> Analyze
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-file-medical"></i>
+        <p>This batch has no samples yet.</p>
+        <a href="/scan?dataset={{ batch['dataset_id'] }}&batch={{ batch['batch_id'] }}" class="btn btn-primary">
+            <i class="fas fa-upload"></i> Upload files
+        </a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

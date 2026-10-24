@@ -1,485 +1,263 @@
 {% extends "base.htm" %}
 
-{% block page_title %}
-Flow Cytometry Datasets
-{% endblock %}
+{% block page_title %}Datasets{% endblock %}
+
+{% block breadcrumb %}<span class="current">Datasets</span>{% endblock %}
 
 {% block page_body %}
-<div id="welcome-msg" style="margin-bottom:20px; font-size:18px;"></div>
-
-<div class="datasets-container">
-    <div class="datasets-header">
-        <div class="header-content">
-            <i class="fas fa-database"></i>
-            <h2>Your Datasets</h2>
-        </div>
-        <button id="add-dataset-btn" class="add-dataset-button">
-            <i class="fas fa-plus"></i>
-            Add New Dataset
-        </button>
+<div class="page-header">
+    <div>
+        <h1>Datasets</h1>
+        <p>Each dataset holds batches of FCS samples. Open a batch to see and analyze its samples.</p>
     </div>
-
-    <div class="datasets-grid" id="datasets-grid">
-        {% for dataset in dataset_list %}
-        <div class="dataset-card">
-            <div class="dataset-header">
-                <div class="dataset-icon">
-                    <i class="fas fa-folder"></i>
-                </div>
-                <h3>{{ dataset['dataset_name'] }}</h3>
-                <!-- Dataset 删除按钮 -->
-                <button class="delete-dataset-button" data-dataset-id="{{ dataset['dataset_id'] }}" title="Delete Dataset"
-                        style="margin-left: auto; background: none; border: none; color: red; cursor: pointer;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-
-            <div class="dataset-content">
-                <div class="dataset-stats">
-                    <div class="stat-item">
-                        <i class="fas fa-layer-group"></i>
-                         <span>{{ dataset['batches']|length }} Batches</span>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-file-medical"></i>
-                        <span>{{ dataset['batches']|map(attribute='samples')|sum }} Samples</span>
-                    </div>
-                </div>
-
-                <div class="batches-list">
-                    <h4>Batches</h4>
-                    <ul>
-                        {% for batch in dataset['batches'] %}
-                        <li>
-                            <a href="/batch?batch_id={{ batch['batch_id'] }}" class="batch-link">
-                                <i class="fas fa-layer-group"></i>
-                                <span>{{ batch['batch_name'] }}</span>
-                                <small>{{ batch['samples'] }} samples</small>
-                            </a>
-                            <!-- Batch 删除按钮 -->
-                            <button class="delete-batch-button" data-batch-id="{{ batch['batch_id'] }}"
-                                    title="Delete Batch"
-                                    style="background: none; border: none; color: red; cursor: pointer;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    <button class="add-batch-button" data-dataset-id="{{ dataset['dataset_id'] }}">Add Batch</button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="page-actions">
+        <button id="add-dataset-btn" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New dataset
+        </button>
     </div>
 </div>
 
+<div class="datasets-grid" id="datasets-grid">
+    <div class="card empty-state"><p>Loading datasets…</p></div>
+</div>
+
 <style>
-.datasets-container {
-    padding: 20px;
-}
-
-.datasets-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.header-content i {
-    font-size: 28px;
-    color: var(--accent-color);
-}
-
-.header-content h2 {
-    margin: 0;
-    color: var(--primary-color);
-}
-
-.add-dataset-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: var(--accent-color);
-    color: white;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.add-dataset-button:hover {
-    background: var(--primary-color);
-    transform: translateY(-2px);
-}
-
 .datasets-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
     gap: 20px;
+    align-items: start;
+}
+
+.datasets-grid > .empty-state {
+    grid-column: 1 / -1;
 }
 
 .dataset-card {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.dataset-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 0;
 }
 
 .dataset-header {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--background-color);
+    gap: 14px;
+    padding: 18px 16px 16px 20px;
+    border-bottom: 1px solid var(--border);
 }
 
 .dataset-icon {
     width: 40px;
     height: 40px;
-    background: var(--secondary-color);
-    border-radius: 50%;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: var(--primary-soft);
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.dataset-icon i {
-    color: white;
-    font-size: 18px;
+.dataset-title {
+    flex: 1;
+    min-width: 0;
 }
 
-.dataset-header h3 {
+.dataset-title h3 {
+    overflow-wrap: anywhere;
+}
+
+.dataset-title small {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.batch-list {
+    list-style: none;
     margin: 0;
-    color: var(--primary-color);
-    font-size: 18px;
+    padding: 8px;
 }
 
-.dataset-stats {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.stat-item {
+.batch-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: var(--text-color);
+    gap: 4px;
+    border-radius: 6px;
 }
 
-.stat-item i {
-    color: var(--secondary-color);
-}
-
-.batches-list h4 {
-    margin: 0 0 15px 0;
-    color: var(--text-color);
-    font-size: 16px;
-}
-
-.batches-list ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.batches-list li {
-    margin-bottom: 8px;
+.batch-row:hover {
+    background: var(--bg);
 }
 
 .batch-link {
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
-    background: var(--background-color);
+    gap: 12px;
+    padding: 10px 12px;
+    color: var(--text);
     border-radius: 6px;
-    transition: all 0.3s ease;
 }
 
 .batch-link:hover {
-    background: var(--secondary-color);
-    color: white;
+    color: var(--text);
+    text-decoration: none;
 }
 
-.batch-link i {
-    color: var(--secondary-color);
+.batch-link:hover .batch-name {
+    color: var(--primary);
 }
 
-.batch-link:hover i {
-    color: white;
+.batch-link > i {
+    color: var(--text-muted);
 }
 
-.batch-link span {
+.batch-name {
     flex: 1;
+    min-width: 0;
+    font-weight: 500;
+    overflow-wrap: anywhere;
 }
 
 .batch-link small {
-    color: #666;
+    color: var(--text-muted);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.batch-link .fa-chevron-right {
     font-size: 12px;
 }
 
-.batch-link:hover small {
-    color: rgba(255,255,255,0.8);
+.batch-row .icon-btn {
+    margin-right: 4px;
 }
 
-@media (max-width: 768px) {
-    .datasets-header {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
-    }
+.batch-empty {
+    padding: 12px;
+    color: var(--text-muted);
+    font-size: 15px;
+}
 
-    .add-dataset-button {
-        width: 100%;
-        justify-content: center;
-    }
+.dataset-footer {
+    padding: 0 16px 16px;
 }
 </style>
 
-
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+const grid = document.getElementById('datasets-grid');
+let datasets = [];
 
-    // Confirm the session is still valid and get the user info
-    fetch('/api/check_auth', {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(userData => {
-        if (!userData.success) {
-            window.location.href = '/login';
-        } else {
-            document.getElementById('welcome-msg').innerText = "Welcome, " + userData.user.username;
-            loadDatasets();
-            setInterval(loadDatasets, 10000);
-        }
-    })
-    .catch(err => {
-        console.error("Auth error:", err);
-        window.location.href = '/login';
+function sampleCount(dataset) {
+    return dataset.batches.reduce((sum, b) => sum + b.samples, 0);
+}
+
+function renderDatasets() {
+    if (datasets.length === 0) {
+        grid.innerHTML = `
+            <div class="card empty-state">
+                <i class="fas fa-folder-open"></i>
+                <p>You don't have any datasets yet.</p>
+                <button class="btn btn-primary" onclick="createDataset()"><i class="fas fa-plus"></i> New dataset</button>
+            </div>`;
+        return;
+    }
+    grid.innerHTML = datasets.map(d => `
+        <div class="card dataset-card">
+            <div class="dataset-header">
+                <div class="dataset-icon"><i class="fas fa-folder"></i></div>
+                <div class="dataset-title">
+                    <h3>${escapeHtml(d.dataset_name)}</h3>
+                    <small>${plural(d.batches.length, 'batch', 'batches')} · ${plural(sampleCount(d), 'sample')}</small>
+                </div>
+                <button class="icon-btn danger" onclick="deleteDataset(${d.dataset_id})"
+                        title="Delete dataset" aria-label="Delete dataset ${escapeHtml(d.dataset_name)}">
+                    <i class="fas fa-trash-can"></i>
+                </button>
+            </div>
+            <ul class="batch-list">
+                ${d.batches.length ? d.batches.map(b => `
+                <li class="batch-row">
+                    <a href="/batch?batch_id=${b.batch_id}" class="batch-link">
+                        <i class="fas fa-layer-group"></i>
+                        <span class="batch-name">${escapeHtml(b.batch_name)}</span>
+                        <small>${plural(b.samples, 'sample')}</small>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <button class="icon-btn danger" onclick="deleteBatch(${d.dataset_id}, ${b.batch_id})"
+                            title="Delete batch" aria-label="Delete batch ${escapeHtml(b.batch_name)}">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </li>`).join('') : '<li class="batch-empty">No batches yet.</li>'}
+            </ul>
+            <div class="dataset-footer">
+                <button class="btn btn-secondary btn-sm" onclick="createBatch(${d.dataset_id})">
+                    <i class="fas fa-plus"></i> Add batch
+                </button>
+            </div>
+        </div>`).join('');
+}
+
+async function loadDatasets() {
+    try {
+        datasets = (await api('/api/datasets?timestamp=' + Date.now())).datasets;
+        renderDatasets();
+    } catch (err) {
+        grid.innerHTML = `<div class="card empty-state"><p>Could not load datasets: ${escapeHtml(err.message)}</p></div>`;
+    }
+}
+
+async function run(action, successMessage) {
+    try {
+        await action();
+        showToast(successMessage);
+        await loadDatasets();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function createDataset() {
+    const name = await promptDialog({
+        title: 'New dataset', confirmText: 'Create dataset',
+        input: {label: 'Dataset name', placeholder: 'e.g. COVID T-cell panel'},
     });
+    if (name) run(() => api('/api/dataset/new', {method: 'POST', form: {dataset_name: name}}), `Created dataset “${name}”`);
+}
 
-    function loadDatasets() {
-        fetch('/api/datasets?timestamp=' + new Date().getTime(), {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const datasetsGrid = document.getElementById('datasets-grid');
-                let html = '';
-                data.datasets.forEach(dataset => {
-                    const numBatches = dataset.batches.length;
-                    let totalSamples = 0;
-                    dataset.batches.forEach(batch => {
-                        totalSamples += batch.samples;
-                    });
-                    html += `
-                    <div class="dataset-card">
-                        <div class="dataset-header">
-                            <div class="dataset-icon">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <h3>${dataset.dataset_name}</h3>
-                            <button class="delete-dataset-button" data-dataset-id="${dataset.dataset_id}" title="Delete Dataset"
-                                    style="margin-left: auto; background: none; border: none; color: red; cursor: pointer;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        <div class="dataset-content">
-                            <div class="dataset-stats">
-                                <div class="stat-item">
-                                    <i class="fas fa-layer-group"></i>
-                                    <span>${numBatches} Batches</span>
-                                </div>
-                                <div class="stat-item">
-                                    <i class="fas fa-file-medical"></i>
-                                    <span>${totalSamples} Samples</span>
-                                </div>
-                            </div>
-                            <div class="batches-list">
-                                <h4>Batches</h4>
-                                <ul>
-                    `;
-                    dataset.batches.forEach(batch => {
-                        html += `
-                                    <li>
-                                        <a href="/batch?batch_id=${batch.batch_id}" class="batch-link">
-                                            <i class="fas fa-layer-group"></i>
-                                            <span>${batch.batch_name}</span>
-                                            <small>${batch.samples} samples</small>
-                                        </a>
-                                        <button class="delete-batch-button" data-batch-id="${batch.batch_id}"
-                                                title="Delete Batch"
-                                                style="background: none; border: none; color: red; cursor: pointer;">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </li>
-                        `;
-                    });
-                    html += `
-                                </ul>
-                                <button class="add-batch-button" data-dataset-id="${dataset.dataset_id}">Add Batch</button>
-                            </div>
-                        </div>
-                    </div>
-                    `;
-                });
-                datasetsGrid.innerHTML = html;
-                bindDatasetDelete();
-                bindBatchDelete();
-                bindAddBatch();
-            } else {
-                alert("Failed to load datasets: " + data.message);
-            }
-        })
-        .catch(err => {
-            console.error("Error fetching datasets:", err);
-        });
-    }
-
-    function bindDatasetDelete() {
-        document.querySelectorAll('.delete-dataset-button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const datasetId = this.getAttribute('data-dataset-id');
-                if (confirm("Are you sure you want to delete this dataset?")) {
-                    const formData = new FormData();
-                    formData.append("dataset_id", datasetId);
-                    fetch('/api/dataset/delete', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            loadDatasets();
-                        } else {
-                            alert("Error: " + data.message);
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Error deleting dataset:", err);
-                    });
-                }
-            });
-        });
-    }
-
-    function bindBatchDelete() {
-        document.querySelectorAll('.delete-batch-button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const batchId = this.getAttribute('data-batch-id');
-                if (confirm("Are you sure you want to delete this batch?")) {
-                    const formData = new FormData();
-                    formData.append("batch_id", batchId);
-                    fetch('/api/batch/delete', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            loadDatasets();
-                        } else {
-                            alert("Error: " + data.message);
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Error deleting batch:", err);
-                    });
-                }
-            });
-        });
-    }
-
-    function bindAddBatch() {
-        document.querySelectorAll('.add-batch-button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const datasetId = this.getAttribute('data-dataset-id');
-                const batchName = prompt("Enter new batch name for dataset " + datasetId + ":");
-                if (batchName) {
-                    const formData = new FormData();
-                    formData.append("dataset_id", datasetId);
-                    formData.append("batch_name", batchName);
-                    fetch('/api/batch/new', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.success) {
-                            alert(data.message);
-                            loadDatasets();
-                        } else {
-                            alert("Error: " + data.message);
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Error creating batch:", err);
-                    });
-                }
-            });
-        });
-    }
-
-    // 添加新数据集功能
-    document.getElementById('add-dataset-btn').addEventListener('click', function() {
-        const datasetName = prompt("Enter new dataset name:");
-        if (datasetName) {
-            const formData = new FormData();
-            formData.append("dataset_name", datasetName);
-            fetch('/api/dataset/new', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    loadDatasets();
-                } else {
-                    alert("Error: " + data.message);
-                }
-            })
-            .catch(err => {
-                console.error("Error creating dataset:", err);
-            });
-        }
+async function createBatch(datasetId) {
+    const dataset = datasets.find(d => d.dataset_id === datasetId);
+    const name = await promptDialog({
+        title: 'Add batch', message: `The batch will be added to “${dataset.dataset_name}”.`, confirmText: 'Add batch',
+        input: {label: 'Batch name', placeholder: 'e.g. Plate 1'},
     });
-});
+    if (name) run(() => api('/api/batch/new', {method: 'POST', form: {dataset_id: datasetId, batch_name: name}}),
+        `Added batch “${name}”`);
+}
+
+async function deleteDataset(datasetId) {
+    const d = datasets.find(x => x.dataset_id === datasetId);
+    const ok = await confirmDialog({
+        title: `Delete “${d.dataset_name}”?`,
+        message: `This permanently deletes ${plural(d.batches.length, 'batch', 'batches')} and ${plural(sampleCount(d), 'sample')}. This cannot be undone.`,
+        confirmText: 'Delete dataset', danger: true,
+    });
+    if (ok) run(() => api('/api/dataset/delete', {method: 'POST', form: {dataset_id: datasetId}}),
+        `Deleted dataset “${d.dataset_name}”`);
+}
+
+async function deleteBatch(datasetId, batchId) {
+    const b = datasets.find(x => x.dataset_id === datasetId).batches.find(x => x.batch_id === batchId);
+    const ok = await confirmDialog({
+        title: `Delete “${b.batch_name}”?`,
+        message: `This permanently deletes the batch and its ${plural(b.samples, 'sample')}. This cannot be undone.`,
+        confirmText: 'Delete batch', danger: true,
+    });
+    if (ok) run(() => api('/api/batch/delete', {method: 'POST', form: {batch_id: batchId}}),
+        `Deleted batch “${b.batch_name}”`);
+}
+
+document.getElementById('add-dataset-btn').addEventListener('click', createDataset);
+loadDatasets();
 </script>
 {% endblock %}
